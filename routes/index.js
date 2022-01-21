@@ -3,12 +3,18 @@ const router = express.Router();
 // create logs for everything
 const morgan = require('morgan');
 router.use(morgan('dev'));
+// adding cors
+const cors = require('cors');
+router.use(cors());
 const { getUserById } = require('../db/index');
+
+const bp = require('body-parser')
+router.use(bp.json())
+router.use(bp.urlencoded({ extended: true }))
 
 router.use(async (req, res, next) => {
   const prefix = "Bearer ";
   const auth = req.header('Authorization');
-
   // goes onto the next function if auth is falsey
   if (!auth) {
       next();
@@ -36,5 +42,21 @@ router.get("/", (req, res) => {
 
 const usersRouter = require('./users');
 router.use('/users', usersRouter);
+
+// 404 error route
+router.use('*', (req, res) => {
+    res.status(404);
+    res.send("404 error");
+  })
+  
+// 500 error route with error message
+router.use((error, req, res, next) => {
+res.status(500);
+console.log(error.message);
+res.send({
+    error: 500,
+    message: error.message
+    });
+})
 
 module.exports = router;
