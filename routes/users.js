@@ -63,7 +63,7 @@ usersRouter.get('/all', async (req, res , next) => {
 })
 
 // change the user password
-usersRouter.patch('/password', async (req, res, next) => {
+usersRouter.patch('/password', requireUser, async (req, res, next) => {
     try{
         const patchedUser = await changeUserPassword({id: req.user.id, password: req.body.password});
         res.send(patchedUser);

@@ -44,6 +44,9 @@ router.get("/", (req, res) => {
 const usersRouter = require('./users');
 router.use('/users', usersRouter);
 
+const gamesRouter = require('./games');
+router.use('/games', gamesRouter);
+
 // 404 error route
 router.use('*', (req, res) => {
     res.status(404);
