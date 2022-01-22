@@ -1,5 +1,5 @@
 const express= require('express');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 const usersRouter = express.Router();
 const {
     createUser,
@@ -9,6 +9,8 @@ const {
     getAllUsers,
     changeUserPassword}
 = require('../db/index');
+
+const {requireUser} = require('./utils');
 
 // registration/ create new user
 usersRouter.post('/register', async(req, res, next) => {
@@ -63,9 +65,10 @@ usersRouter.get('/all', async (req, res , next) => {
 // change the user password
 usersRouter.patch('/password', async (req, res, next) => {
     try{
-        const patchedUser = await changeUserPassword(req.body);
+        const patchedUser = await changeUserPassword({id: req.user.id, password: req.body.password});
         res.send(patchedUser);
     } catch(error){
+        console.log(error);
         next(error);
     }
 })

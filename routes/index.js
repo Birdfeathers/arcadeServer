@@ -1,4 +1,5 @@
 const express = require("express");
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 // create logs for everything
 const morgan = require('morgan');
@@ -22,7 +23,7 @@ router.use(async (req, res, next) => {
       const token = auth.slice(prefix.length);
 
       try {
-          const { id } = await jwt.verify(token, JWT_SECRET);
+          const { id } = await jwt.verify(token, process.env.JWT_SECRET);
 
           if (id) {
               req.user = await getUserById(id);
