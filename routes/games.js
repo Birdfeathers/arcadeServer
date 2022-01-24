@@ -12,8 +12,14 @@ const {requireUser} = require('./utils');
 gamesRouter.post('/newgame', requireUser, async(req, res, next) => {
     const owner = req.user.id;
     const {rows, cols, toWin, against, goesFirst} = req.body;
-    const playerOne = goesFirst ? {owner}:{against};
-    const playerTwo = goesFirst ? {against} : {owner};
+    let playerOne, playerTwo;
+    if(goesFirst){
+        playerOne = owner;
+        playerTwo = against;
+    } else{
+        playerOne = against;
+        playerTwo = owner
+    }
     
     try{
         const game = await createGame({rows, cols, toWin, playerOne, playerTwo, owner, moveHistory:""});

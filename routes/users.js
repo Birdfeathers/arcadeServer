@@ -52,6 +52,16 @@ usersRouter.post('/login', async (req, res, next) => {
     }
 })
 
+usersRouter.get('/user/:userId', async (req, res, next) => {
+    const {userId} = req.params;
+    try{
+        const user = await getUserById(userId);
+        res.send(user);
+    } catch(error) {
+        next(error);
+    }
+})
+
 // get all the users
 usersRouter.get('/all', async (req, res , next) => {
     try {

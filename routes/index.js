@@ -16,11 +16,12 @@ router.use(bp.urlencoded({ extended: true }))
 router.use(async (req, res, next) => {
   const prefix = "Bearer ";
   const auth = req.header('Authorization');
+  console.log(auth)
   // goes onto the next function if auth is falsey
-  if (!auth) {
+  if (!auth || auth === "Bearer") {
       next();
-  } else if (auth.startsWith(prefix)) { // verifies the token if "auth" starts with "Bearer"
-      const token = auth.slice(prefix.length);
+  } else if (auth.startsWith(prefix)) { // verifies the token if "auth" starts with "Bearer" 
+    const token = auth.slice(prefix.length);
 
       try {
           const { id } = await jwt.verify(token, process.env.JWT_SECRET);
@@ -33,6 +34,7 @@ router.use(async (req, res, next) => {
           next(error)
       }
   } else {
+      console.log('dada')
       next(`Authorization token must start with ${ prefix }`)
   }
 })

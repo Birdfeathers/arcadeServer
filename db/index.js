@@ -176,7 +176,7 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
             UPDATE games
             SET moveHistory =
             CASE
-             WHEN moveHistory > $1 THEN $1
+             WHEN length(moveHistory) < length($1) THEN $1
              ElSE moveHistory
             END
             WHERE id = $2

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const {
   client,
   createUser,
@@ -38,7 +39,8 @@ async function buildTables() {
           "playerOne" INTEGER REFERENCES users(id),
           "playerTwo" INTEGER REFERENCES users(id),
           "owner" INTEGER REFERENCES users(id),
-          moveHistory VARCHAR
+          moveHistory VARCHAR,
+          winner INTEGER
         );
       `)
     } catch(error){
