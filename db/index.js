@@ -136,9 +136,15 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
   {
       try{
           const {rows: [game]} = await client.query(`
-          SELECT *
+          SELECT games.*, 
+            owner.username AS ownerusername, 
+            playerOne.username AS playerOneUsername,
+            playerTwo.username AS playerTwoUsername
           FROM games
-          WHERE id = $1;
+          JOIN users owner ON games."owner" = owner.id
+          JOIN users playerOne ON games."playerOne" = playerOne.id
+          JOIN users playerTwo ON games."playerTwo" = playerTwo.id
+          WHERE games.id = $1;
           `, [id])
           return game;
 
@@ -154,11 +160,17 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       try{
 
           const {rows: games} = await client.query(`
-          SELECT *
+          SELECT games.*, 
+            owner.username AS ownerusername, 
+            playerOne.username AS playerOneUsername,
+            playerTwo.username AS playerTwoUsername
           FROM games
-          WHERE "owner" = $1 
-          OR "playerOne" = $1
-          OR "playerTwo" = $1;
+          JOIN users owner ON games."owner" = owner.id
+          JOIN users playerOne ON games."playerOne" = playerOne.id
+          JOIN users playerTwo ON games."playerTwo" = playerTwo.id
+          WHERE games."owner" = $1 
+          OR games."playerOne" = $1
+          OR games."playerTwo" = $1;
           `, [userId])
           return games;
 

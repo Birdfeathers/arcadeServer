@@ -16,7 +16,6 @@ router.use(bp.urlencoded({ extended: true }))
 router.use(async (req, res, next) => {
   const prefix = "Bearer ";
   const auth = req.header('Authorization');
-  console.log(auth)
   // goes onto the next function if auth is falsey
   if (!auth || auth === "Bearer") {
       next();
