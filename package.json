@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "db:build": "node ./db/init_db"
+    "db:build": "node ./db/init_db",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
