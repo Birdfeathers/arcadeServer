@@ -19,7 +19,7 @@ const server = http.createServer(app);
 //     }
 //   });
 
-const io = server;
+socketIO(server);
 
 
 
