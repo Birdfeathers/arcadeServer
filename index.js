@@ -4,8 +4,8 @@ const http = require("http");
 const socketIO = require("socket.io");
 
 
-//const port = process.env.PORT || 4001;
-const port = "https://mysterious-mesa-87962.herokuapp.com/"
+const port = process.env.PORT || 4001;
+// const port = "https://mysterious-mesa-87962.herokuapp.com/"
 const index = require("./routes/index");
 
 const app = express();
