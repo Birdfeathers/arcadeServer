@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require("express");
 const http = require("http");
+const socketIO = require("socket.io");
 
 
 const port = process.env.PORT || 4001;
@@ -18,9 +19,9 @@ const server = http.createServer(app);
 //       methods: ["GET", "POST"]
 //     }
 //   });
-  const io = require("socket.io")(server);
+  // const io = require("socket.io")(server);
 
-// socketIO(server);
+socketIO(server);
 
 
 
