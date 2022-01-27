@@ -23,7 +23,7 @@ const server = http.createServer(app);
 
   const io = require("socket.io")(server, {
     cors: {
-      origin: 'https://mysterious-mesa-87962.herokuapp.com/',
+      origin: 'http://localhost:3000/',
       methods: ["GET", "POST"]
     }
   });
