@@ -21,7 +21,7 @@ const server = http.createServer(app);
 //   });
   // const io = require("socket.io")(server);
 
-socketIO(server);
+const io = socketIO(server);
 
 
 
