@@ -12,14 +12,14 @@ app.use(index);
 
 const server = http.createServer(app);
 
-// const io = require("socket.io")(server, {
-//     cors: {
-//       origin: port,
-//       methods: ["GET", "POST"]
-//     }
-//   });
+const io = require("socket.io")(server, {
+    cors: {
+      origin: port,
+      methods: ["GET", "POST"]
+    }
+  });
 
-socketIO(server);
+// socketIO(server);
 
 
 
