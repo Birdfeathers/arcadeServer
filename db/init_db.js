@@ -201,9 +201,9 @@ async function testGameFunctions()
       console.log('Testing update move history with longer moves...');
       const moveHistory2 = await updateMoveHistory({id:1, moveHistory: longerMoves, game});
       console.log(moveHistory2);
-      console.log('Testing update to tie ...')
-      const moveHistory3 = await updateMoveHistory({id:2, moveHistory: moves2, game: game2});
-      console.log(moveHistory3);
+      // console.log('Testing update to tie ...')
+      // const moveHistory3 = await updateMoveHistory({id:2, moveHistory: moves2, game: game2});
+      // console.log(moveHistory3);
       console.log('Finished testing game functions.')
   } catch(error){
       console.log('Error with game functions.')
