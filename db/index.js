@@ -2,6 +2,7 @@ const { Client } = require('pg');
 const DB_NAME = 'arcade_db'
 const DB_URL = process.env.DATABASE_URL || `postgres://localhost:5432/${ DB_NAME }`;
 const client = new Client(DB_URL);
+const findAllLines  = require('./findLines');
 
 const bcrypt = require('bcrypt'); // import bcrypt
 
@@ -180,9 +181,10 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
   }
 
 // ---------- update moves after each move -----------------------------------
-  async function updateMoveHistory({id, moveHistory})
+
+  async function updateMoves(id, moveHistory)
   {
-      
+      moveHistory = JSON.stringify(moveHistory);
       try{
           const {rows: [moves]} = await client.query(`
             UPDATE games
@@ -199,6 +201,43 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       } catch(error) {
           throw error;
       }
+  }
+
+  async function updateWinner(id, winner)
+  {
+    try{
+      const {rows: [game]} = await client.query(`
+        UPDATE games
+        SET winner = $1
+        WHERE id = $2
+        RETURNING *;
+      `, [winner, id])
+
+    } catch(error) {
+      throw error;
+    }
+  }
+
+  async function updateMoveHistory({id, moveHistory})
+  {
+    try{
+      let game = await getGame(id);
+      let win = game.winner;
+      if(win) throw Error("Game Already over");
+      const result = findAllLines(moveHistory, game.rows, game.cols);
+      const winLines = result.lines.filter(line => line.length >= game.towin);
+      if(!win && winLines.length > 0){ 
+        updateWinner(id, winLines[0].color);
+        win = true;
+      }
+      const moves = await updateMoves(id, moveHistory);
+      if(!win && JSON.parse(moves.movehistory).length === game.rows * game.cols) updateWinner(id, "tie");
+      return {moves, winLines, board: result.board};
+    } catch(error)
+    {
+      throw error;
+    }
+      
   }
 
 module.exports = {

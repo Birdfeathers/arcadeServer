@@ -40,7 +40,7 @@ async function buildTables() {
           "playerTwo" INTEGER REFERENCES users(id),
           "owner" INTEGER REFERENCES users(id),
           moveHistory VARCHAR,
-          winner INTEGER
+          winner VARCHAR
         );
       `)
     } catch(error){
@@ -130,8 +130,8 @@ async function createInitialGames()
       {row: 2, col: 1},
       {row: 1, col: 0},
       {row: 1, col: 2},
-      {row: 2, col: 0},
-      {row: 2, col: 2}
+      {row: 2, col: 2},
+      //{row: 2, col: 0},
     ]
 
     const gamesToCreate = [
@@ -172,22 +172,38 @@ async function testGameFunctions()
     {row: 2, col: 0},
     {row: 2, col: 2},
   ]
+
+  const moves2 = [
+    {row: 0, col: 0},
+    {row: 1, col: 1},
+    {row: 0, col: 2},
+    {row: 0, col: 1},
+    {row: 2, col: 1},
+    {row: 1, col: 0},
+    {row: 1, col: 2},
+    {row: 2, col: 2},
+    {row: 2, col: 0},
+  ]
   try{
       console.log('Testing Game functions ...');
       const id = 1;
       console.log(`Getting game with id ${id}...`);
       const game = await getGame(id);
+      const game2 = await getGame(2);
       console.log(game);
       const userId = 3;
       console.log(`Getting all games belonging to user ${userId}...`);
       const games = await getGamesByUser(userId);
       console.log(games);
       console.log('Testing update move history with shorter moves ...');
-      const moveHistory1 = await updateMoveHistory({id: 1, moveHistory: JSON.stringify(shorterMoves)});
+      const moveHistory1 = await updateMoveHistory({id: 1, moveHistory: shorterMoves, game});
       console.log(moveHistory1);
       console.log('Testing update move history with longer moves...');
-      const moveHistory2 = await updateMoveHistory({id:1, moveHistory: JSON.stringify(longerMoves)});
+      const moveHistory2 = await updateMoveHistory({id:1, moveHistory: longerMoves, game});
       console.log(moveHistory2);
+      console.log('Testing update to tie ...')
+      const moveHistory3 = await updateMoveHistory({id:2, moveHistory: moves2, game: game2});
+      console.log(moveHistory3);
       console.log('Finished testing game functions.')
   } catch(error){
       console.log('Error with game functions.')

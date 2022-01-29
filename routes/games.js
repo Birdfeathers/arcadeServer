@@ -6,6 +6,7 @@ const {
     getGamesByUser,
     updateMoveHistory}
 = require('../db/index');
+const findAllLines  = require('../db/findLines');
 const {requireUser} = require('./utils');
 
 // registration/ create new user
@@ -58,4 +59,14 @@ gamesRouter.patch('/move', requireUser, async (req, res, next) => {
     }
 })
 
+gamesRouter.post('/winLines', async (req, res, next) => {
+    try{
+        const {moveHistory, rows, cols, towin} = req.body;
+        const result = findAllLines(moveHistory, rows, cols);
+        const winLines = result.lines.filter(line => line.length >= towin);
+        res.send({winLines, board: result.board});
+    } catch(error){
+        next(error);
+    }
+})
 module.exports = gamesRouter;
