@@ -71,7 +71,7 @@ function findLine(root, board, rows, cols, lineNum, linetype)
         board[currentNode.row][currentNode.col][linetype] = lineNum;
         currentNode = iterateLine(linetype, currentNode)
     }
-    const start = iterateLine(linetype, currentNode, false);
+    const end = iterateLine(linetype, currentNode, false);
   
     currentNode = iterateLine(linetype, Object.assign({}, root), false);
     while(getTableVar(currentNode, rows, cols, board).type === color ) 
@@ -80,7 +80,7 @@ function findLine(root, board, rows, cols, lineNum, linetype)
         board[currentNode.row][currentNode.col][linetype] = lineNum;
         currentNode = iterateLine(linetype, currentNode, false);
     }
-    const end = iterateLine(linetype, currentNode);
+    const start = iterateLine(linetype, currentNode);
     return {length, color, lineNum, linetype, start, end};
 }
 
@@ -108,6 +108,64 @@ function findAllLines(moveHistory, rows, cols)
     })
     return {lines, board};
 }
+
+function findOneAway(type, line, lines, board, rows, cols)
+{
+    const endCopy = Object.assign({}, line.end)
+    const startCopy = Object.assign({}, line.start)
+    // if(line.lineNum == 1)
+    const after = iterateLine(type, iterateLine(type, endCopy));
+    if(line.lineNum == 1) console.log(after);
+    if(isOnTable(after.row, after.col, rows, cols) && board[after.row][after.col].type == line.color)
+    {
+        line.lineAfter = board[after.row][after.col][type];
+    }
+    const before = iterateLine(type, iterateLine(type, startCopy, false), false);
+    // if(line.lineNum == 1){
+    //     console.log(before)
+    //     console.log(board[line.start.row][line.start.col])
+    //     console.log(board[after.row][after.col])
+    // }
+    if(isOnTable(before.row, before.col, rows, cols) && board[before.row][before.col].type == line.color)
+    {
+        line.lineBefore = board[before.row][before.col][type];
+    }
+    return line;
+}
+
+function findAllOneAway(lines, board, rows, cols)
+{
+    let newLines = [];
+    const horizontal = lines.filter(line => line.linetype == "horizontal");
+    const vertical = lines.filter(line => line.linetype == "vertical");
+    const positive = lines.filter(line => line.linetype == "positive");
+    const negative = lines.filter(line => line.linetype == "negative");
+    horizontal.forEach(line => {newLines.push(findOneAway("horizontal", line, horizontal, board, rows, cols))});
+    vertical.forEach(line => {newLines.push(findOneAway("vertical", line, vertical, board, rows, cols))});
+    positive.forEach(line => {newLines.push(findOneAway("positive", line, positive, board, rows, cols))});
+    negative.forEach(line => {newLines.push(findOneAway("negative", line, negative, board, rows, cols))});
+    return newLines;
+}
+
+moveHistory = [
+{row: 5, col: 4},
+{row: 1, col: 8},
+{row: 5, col: 5},
+{row: 2, col: 9},
+{row: 5, col: 6},
+{row: 4, col: 11},
+{row: 5, col: 8},
+{row: 5, col: 12},
+{row: 8, col: 11},
+{row: 8, col: 1},
+{row: 10, col: 9},
+{row: 10, col: 1}
+]
+
+const result = findAllLines(moveHistory, 15, 15);
+const oneAway = findAllOneAway(result.lines, result.board, 15, 15);
+console.log(oneAway);
+console.log(result.lines[0]);
 
 module.exports = findAllLines;
 
