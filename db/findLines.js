@@ -1,3 +1,20 @@
+function Gamestate(rows, cols, history = []) //constructor for gamestate from a move history
+{//idk about this
+    this.rows = rows;
+    this.cols = cols;
+    this.board = createFilledArray(rows, cols, history);
+    this.turn = history.length % 2 ? "white" : "black";
+    this.lines = undefined//AAAAAAAAAAAAAAAAA
+}
+
+function GamestateCustom(board, turn) //constructor for gamestate from custom board; board must be at least one row
+{
+    this.rows = board.length
+    this.cols = board[0].length
+    this.board = board
+    this.turn = turn
+}
+
 function createBlankArray(rows, cols){
     let arr = [];
     for(let i = 0; i < rows; i++)
@@ -147,6 +164,8 @@ function findAllOneAway(lines, board, rows, cols)
     return newLines;
 }
 
+
+
 moveHistory = [
 {row: 5, col: 4},
 {row: 1, col: 8},
@@ -160,12 +179,29 @@ moveHistory = [
 {row: 8, col: 1},
 {row: 10, col: 9},
 {row: 10, col: 1}
-]
+];
+
+function isAvailiable(row, column, board, rows, cols)
+{
+    out = isOnTable(row, column, rows, cols);
+    out &&= !board[row][column].occupied;
+    out &&= !threeThree(row, column, board, rows, cols);
+    out &&= !fourFour(row, column, board, rows, cols);
+    return out;
+}
+
+function threeThree(row, column, board, rows, cols)
+{
+    return true;
+}
+function fourFour(row, column, board, rows, cols)
+{
+    return true;
+}
 
 const result = findAllLines(moveHistory, 15, 15);
 const oneAway = findAllOneAway(result.lines, result.board, 15, 15);
-console.log(oneAway);
-console.log(result.lines[0]);
+
 
 module.exports = findAllLines;
 
