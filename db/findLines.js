@@ -148,7 +148,7 @@ function findLine(root, gamestate, lineNum, lineDirection)
     while(getTableVar(currentNode, gs).color === color ) 
     {
         length++;
-        board[currentNode.row][currentNode.col][lineDirection] = lineNum;
+        gs.board[currentNode.row][currentNode.col][lineDirection] = lineNum;
         currentNode = iterateLine(lineDirection, currentNode, false);
     }
     const start = iterateLine(lineDirection, currentNode);
