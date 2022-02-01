@@ -1,59 +1,111 @@
-function Gamestate(rows, cols, history = []) //constructor for gamestate from a move history
-{//idk about this
+'use strict';
+/* below are some enum-like constants - I changed references to the constants
+** into references to these vars to avoid magic numbers. */
+// constants representing stone colors
+const White = "white"
+const Black = "black"
+const None = "none"
+// constants for representing line directions
+const Horizontal = "horizontal"
+const Vertical = "vertical"
+const Negative = "negative"
+const Positive = "positive"
+/* constants for representing whether a line is the beginning of a three or a
+** four or neither */
+const Three = 3
+const Four = 4
+const Other = 0
+
+/* constructors for all of the types of objects we use in this file; I didn't
+** add these to the code much mostly because they would make it longer. Mostly
+** I just wanted these as some kind of documentation of what each type of object
+** contains. */
+// constructor for gamestate from a move history
+function Gamestate(rows, cols, history = [])
+{
     this.rows = rows;
     this.cols = cols;
-    this.board = createFilledArray(rows, cols, history);
-    this.turn = history.length % 2 ? "white" : "black";
-    this.lines = undefined//AAAAAAAAAAAAAAAAA
+    this.history = history;
+    const result = findAllLines(this);
+    this.board = result.board;
+    this.lines = result.lines;
+    this.lines = findAllOneAway(this);
+    this.turn = history.length % 2 ? White : Black;
 }
 
-function GamestateCustom(board, turn) //constructor for gamestate from custom board; board must be at least one row
+// constructor for gamestate from all custom values
+function GamestateCustom(rows, cols, history, board, lines, turn)
 {
-    this.rows = board.length
-    this.cols = board[0].length
-    this.board = board
-    this.turn = turn
+    this.rows = rows;
+    this.cols = cols;
+    this.history = history;
+    this.board = board;
+    this.lines = lines;
+    this.turn = turn;
 }
 
-function createBlankArray(rows, cols){
+// constructor for a "node," that is, a row and column for a bourd location.
+function Node(row, column)
+{
+    this.row = row;
+    this.col = column;
+}
+
+// constructor for a line, that is, what is called a row in the rule
+function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undefined, lineBefore=undefined, linetype=undefined)
+{
+    this.length = length;
+    this.color = color;
+    this.lineNum = lineNum;
+    this.lineDirection = lineDirection;
+    this.start = start;
+    this.end = end;
+    this.lineAfter = lineAfter
+    this.lineBefore = lineBefore
+    this.lineType = lineType
+}
+
+function createBlankArray(rows, cols)
+{
     let arr = [];
     for(let i = 0; i < rows; i++)
     {
         let r = [];
         for(let j = 0; j < cols; j++)
         {
-            r.push({occupied:false, type: "none"})
+            r.push({occupied:false, color: None})
         }
         arr.push(r);
     }
     return arr;
 }
 
-function createFilledArray(rows, cols, history)
+function createFilledArray(gamestate)
 {
-    let arr1 = createBlankArray(rows, cols);
-    history.forEach((move, indx) => {
+    const gs = gamestate;
+    let arr1 = createBlankArray(gs.rows, gs.cols);
+    gs.history.forEach((move, indx) => {
         let turn;
-        if(indx % 2 == 0) turn = "black";
-        else turn = "white";
-        arr1[move.row][move.col] = {occupied:true, type: turn, moveNum: indx + 1};
+        if(indx % 2 == 0) turn = Black;
+        else turn = White;
+        arr1[move.row][move.col] = {occupied:true, color: turn, moveNum: indx + 1};
     });
     return arr1;
 }
 
-function iterateLine(linetype, node, forward = true)
+function iterateLine(lineDirection, node, forward = true)
 {
-        if(linetype != "vertical")
+        if(lineDirection != Vertical)
         {
             if(forward) node.col++;
             else node.col--;
         }
-        if(linetype == "vertical" || linetype =="negative")
+        if(lineDirection == Vertical || lineDirection == Negative)
         {
             if(forward) node.row++;
             else node.row--;
         }
-        if(linetype == "positive")
+        if(lineDirection == Positive)
         {
             if(forward) node.row--;
             else node.row++;
@@ -61,13 +113,14 @@ function iterateLine(linetype, node, forward = true)
         return node;
 }
 
-function getTableVar(node, rows, cols, board)
+function getTableVar(node, gamestate)
 {
-    if(!isOnTable(node.row, node.col, rows, cols)) 
+    const gs = gamestate;
+    if(!isOnTable(node.row, node.col, gs.rows, gs.cols)) 
     {
-        return {type: "none"};
+        return {color: None};
     }
-    return board[node.row][node.col];
+    return gs.board[node.row][node.col];
 }
 
 function isOnTable(row, col, rows, cols)
@@ -77,96 +130,100 @@ function isOnTable(row, col, rows, cols)
 }
 
 
-function findLine(root, board, rows, cols, lineNum, linetype)
+function findLine(root, gamestate, lineNum, lineDirection)
 {
+    let gs = gamestate;
     let currentNode = Object.assign({}, root);
     let length = 0;
-    let color = getTableVar(root, rows, cols, board).type;
-    while(getTableVar(currentNode, rows, cols, board).type === color) 
+    let color = getTableVar(root, gs).color;
+    while(getTableVar(currentNode, gs).color === color) 
     {
         length++;
-        board[currentNode.row][currentNode.col][linetype] = lineNum;
-        currentNode = iterateLine(linetype, currentNode)
+        gs.board[currentNode.row][currentNode.col][lineDirection] = lineNum;
+        currentNode = iterateLine(lineDirection, currentNode)
     }
-    const end = iterateLine(linetype, currentNode, false);
+    const end = iterateLine(lineDirection, currentNode, false);
   
-    currentNode = iterateLine(linetype, Object.assign({}, root), false);
-    while(getTableVar(currentNode, rows, cols, board).type === color ) 
+    currentNode = iterateLine(lineDirection, Object.assign({}, root), false);
+    while(getTableVar(currentNode, gs).color === color ) 
     {
         length++;
-        board[currentNode.row][currentNode.col][linetype] = lineNum;
-        currentNode = iterateLine(linetype, currentNode, false);
+        board[currentNode.row][currentNode.col][lineDirection] = lineNum;
+        currentNode = iterateLine(lineDirection, currentNode, false);
     }
-    const start = iterateLine(linetype, currentNode);
-    return {length, color, lineNum, linetype, start, end};
+    const start = iterateLine(lineDirection, currentNode);
+    return {length, color, lineNum, lineDirection, start, end};
 }
 
 
 
-function findAllLines(moveHistory, rows, cols)
+function findAllLines(gamestate)
 {
-    const board = createFilledArray(rows, cols, moveHistory);
+    const board = createFilledArray(gamestate);
+    const gs = Object.assign({board}, gamestate)
     let num = 1;
-    lines = [];
-    moveHistory.forEach((node) => {
-        const tableNode = getTableVar(node, rows, cols, board);
-        function pushLine(linetype)
+    let lines = [];
+    gs.history.forEach((node) => {
+        const tableNode = getTableVar(node, gs);
+        function pushLine(lineDirection)
         {
-            if(!tableNode[linetype]){
-                const line = findLine(node, board, rows, cols, num, linetype);
+            if(!tableNode[lineDirection]){
+                const line = findLine(node, gs, num, lineDirection);
                 lines.push(line);
                 num++;
             }
         }
-        pushLine("horizontal");
-        pushLine("vertical");
-        pushLine("positive");
-        pushLine("negative");
+        pushLine(Horizontal);
+        pushLine(Vertical);
+        pushLine(Positive);
+        pushLine(Negative);
     })
     return {lines, board};
 }
 
-function findOneAway(type, line, lines, board, rows, cols)
-{
+function findOneAway(direction, line, gamestate)
+{//TODO delete commented out code
+    const gs = gamestate;
     const endCopy = Object.assign({}, line.end)
     const startCopy = Object.assign({}, line.start)
     // if(line.lineNum == 1)
-    const after = iterateLine(type, iterateLine(type, endCopy));
-    if(line.lineNum == 1) console.log(after);
-    if(isOnTable(after.row, after.col, rows, cols) && board[after.row][after.col].type == line.color)
+    const after = iterateLine(direction, iterateLine(direction, endCopy));
+    // if(line.lineNum == 1) console.log(after);
+    if(isOnTable(after.row, after.col, gs.rows, gs.cols) && gs.board[after.row][after.col].color == line.color)
     {
-        line.lineAfter = board[after.row][after.col][type];
+        line.lineAfter = gs.board[after.row][after.col][direction];
     }
-    const before = iterateLine(type, iterateLine(type, startCopy, false), false);
+    const before = iterateLine(direction, iterateLine(direction, startCopy, false), false);
     // if(line.lineNum == 1){
     //     console.log(before)
     //     console.log(board[line.start.row][line.start.col])
     //     console.log(board[after.row][after.col])
     // }
-    if(isOnTable(before.row, before.col, rows, cols) && board[before.row][before.col].type == line.color)
+    if(isOnTable(before.row, before.col, gs.rows, gs.cols) && gs.board[before.row][before.col].color == line.color)
     {
-        line.lineBefore = board[before.row][before.col][type];
+        line.lineBefore = gs.board[before.row][before.col][direction];
     }
     return line;
 }
 
-function findAllOneAway(lines, board, rows, cols)
+function findAllOneAway(gamestate)
 {
+    const gs = gamestate;
     let newLines = [];
-    const horizontal = lines.filter(line => line.linetype == "horizontal");
-    const vertical = lines.filter(line => line.linetype == "vertical");
-    const positive = lines.filter(line => line.linetype == "positive");
-    const negative = lines.filter(line => line.linetype == "negative");
-    horizontal.forEach(line => {newLines.push(findOneAway("horizontal", line, horizontal, board, rows, cols))});
-    vertical.forEach(line => {newLines.push(findOneAway("vertical", line, vertical, board, rows, cols))});
-    positive.forEach(line => {newLines.push(findOneAway("positive", line, positive, board, rows, cols))});
-    negative.forEach(line => {newLines.push(findOneAway("negative", line, negative, board, rows, cols))});
+    const horizontal = gs.lines.filter(line => line.lineDirection == Horizontal);
+    const vertical = gs.lines.filter(line => line.lineDirection == Vertical);
+    const positive = gs.lines.filter(line => line.lineDirection == Positive);
+    const negative = gs.lines.filter(line => line.lineDirection == Negative);
+    horizontal.forEach(line => {newLines.push(findOneAway(Horizontal, line, gs))});
+    vertical.forEach(line => {newLines.push(findOneAway(Vertical, line, gs))});
+    positive.forEach(line => {newLines.push(findOneAway(Positive, line, gs))});
+    negative.forEach(line => {newLines.push(findOneAway(Negative, line, gs))});
     return newLines;
 }
 
 
 
-moveHistory = [
+const moveHistory = [
 {row: 5, col: 4},
 {row: 1, col: 8},
 {row: 5, col: 5},
@@ -181,10 +238,10 @@ moveHistory = [
 {row: 10, col: 1}
 ];
 
-function isAvailiable(row, column, board, rows, cols)
+function isAvailable(node, gamestate)
 {
-    out = isOnTable(row, column, rows, cols);
-    out &&= !board[row][column].occupied;
+    const gs = gamestate;
+    out = getTableVar(node, gs).occupied;
     out &&= !threeThree(row, column, board, rows, cols);
     out &&= !fourFour(row, column, board, rows, cols);
     return out;
@@ -199,8 +256,29 @@ function fourFour(row, column, board, rows, cols)
     return true;
 }
 
-const result = findAllLines(moveHistory, 15, 15);
-const oneAway = findAllOneAway(result.lines, result.board, 15, 15);
+//given a gamestate, modify and return the
+//lines in it so that threes and fours are marked
+function findThreesAndFours(gamestate)
+{
+    const gs = gamestate;
+    function identify(line)
+    {
+        const left = iterateLine(line.lineDirection, line.start, false);
+        const gap = iterateLine(line.lineDirection, line.end, true);
+        const lineAfter = gs.lines.find(l => l.lineNum === line.lineAfter);
+        const right = iterateLine(line.lineDirection, lineAfter.end, true);
+        if (isAvailable(getTableVar(gap, gs), gs)) {
+            if (line.length === 1) {
+                if (lineAfter.length === 2){}//TODO
+            }
+        } else {
+            //TODO
+        }
+        return Other; //it fits none of the patterns
+    }
+}
+
+const testState = new Gamestate(15, 15, moveHistory);
 
 
 module.exports = findAllLines;
