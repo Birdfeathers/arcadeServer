@@ -178,6 +178,7 @@ function findAllLines(gamestate)
         pushLine(Positive);
         pushLine(Negative);
     })
+    console.log(board)
     return {lines, board};
 }
 

@@ -224,7 +224,9 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       let game = await getGame(id);
       let win = game.winner;
       if(win) throw Error("Game Already over");
+      console.log("in here")
       const result = findAllLines({history: moveHistory, rows: game.rows, cols: game.cols});
+      console.log("out");
       const winLines = result.lines.filter(line => line.length >= game.towin);
       if(!win && winLines.length > 0){ 
         updateWinner(id, winLines[0].color);
