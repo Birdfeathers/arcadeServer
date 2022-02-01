@@ -62,7 +62,7 @@ gamesRouter.patch('/move', requireUser, async (req, res, next) => {
 gamesRouter.post('/winLines', async (req, res, next) => {
     try{
         const {moveHistory, rows, cols, towin} = req.body;
-        const result = findAllLines(moveHistory, rows, cols);
+        const result = findAllLines({history: moveHistory, rows: rows, cols: cols});
         const winLines = result.lines.filter(line => line.length >= towin);
         res.send({winLines, board: result.board});
     } catch(error){
