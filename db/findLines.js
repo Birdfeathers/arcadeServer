@@ -242,16 +242,16 @@ function isAvailable(node, gamestate)
 {
     const gs = gamestate;
     out = getTableVar(node, gs).occupied;
-    out = out && !threeThree(row, column, board, rows, cols);
-    out = out && !fourFour(row, column, board, rows, cols);
+    out = out && !threeThree(node, gs);
+    out = out && !fourFour(node, gs);
     return out;
 }
 
-function threeThree(row, column, board, rows, cols)
+function threeThree(node, gamestate)
 {
     return true;
 }
-function fourFour(row, column, board, rows, cols)
+function fourFour(node, gamestate)
 {
     return true;
 }
