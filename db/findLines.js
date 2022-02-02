@@ -30,7 +30,6 @@ function Gamestate(rows, cols, history = [])
     this.board = result.board;
     this.lines = result.lines;
     this.lines = findAllOneAway(this);
-    this.lines = identifyAll(this);
     this.turn = history.length % 2 ? White : Black;
 }
 
@@ -179,28 +178,20 @@ function findAllLines(gamestate)
         pushLine(Positive);
         pushLine(Negative);
     })
-    console.log(board)
     return {lines, board};
 }
 
 function findOneAway(direction, line, gamestate)
-{//TODO delete commented out code
+{
     const gs = gamestate;
     const endCopy = Object.assign({}, line.end)
     const startCopy = Object.assign({}, line.start)
-    // if(line.lineNum == 1)
     const after = iterateLine(direction, iterateLine(direction, endCopy));
-    // if(line.lineNum == 1) console.log(after);
     if(isOnTable(after.row, after.col, gs.rows, gs.cols) && gs.board[after.row][after.col].color == line.color)
     {
         line.lineAfter = gs.board[after.row][after.col][direction];
     }
     const before = iterateLine(direction, iterateLine(direction, startCopy, false), false);
-    // if(line.lineNum == 1){
-    //     console.log(before)
-    //     console.log(board[line.start.row][line.start.col])
-    //     console.log(board[after.row][after.col])
-    // }
     if(isOnTable(before.row, before.col, gs.rows, gs.cols) && gs.board[before.row][before.col].color == line.color)
     {
         line.lineBefore = gs.board[before.row][before.col][direction];
@@ -243,41 +234,47 @@ const moveHistory = [
 function isAvailable(node, gamestate)
 {
     const gs = gamestate;
-    out = getTableVar(node, gs).occupied;
-    out = out && !overline(node, gs);
+    //an occupied or nonexistant space is never allowed.
+    if (getTableVar(node, gs).occupied){
+        return false;
+    }
+    const newState = playMove(node, gs);
+    //if there is a win, it is always available.
+    if (newState.lines.filter(line => line.length === 5).length > 0){
+        return true;
+    }
+    //check that there is no overline, then no threethree or fourfour.
+    let out = (newState.lines.filter(line => line.length > 5).length === 0);
     out = out && !threeThree(node, gs);
     out = out && !fourFour(node, gs);
     return out;
 }
 
-function overline(node, gamestate)
-{
-    //TODO
-    return true;
-}
-
 function threeThree(node, gamestate)
 {
     //TODO
-    return true;
+    return false;
 }
 
 function fourFour(node, gamestate)
 {
     //TODO
-    return true;
+    return false;
 }
 
-/* given a gamestate, modify and return the lines in it so that threes and
-** fours are marked. */
+/* given a gamestate, modify a copy of and return the lines in it so that
+** threes and fours are marked. */
 function identifyAll(gamestate)
 {
     const gs = gamestate;
-    //TODO
-    return gs.lines;
+    return gs.lines.map(line =>
+        //a copy of the line with the lineType added
+        Object.assign({lineType: identify(line, gs)}, line
+    ));
 }
+
 function identify(line, gamestate)
-{//TODO check again given that overline may be allowed if it is a win in another direction
+{
     const gs = gamestate;
     const left = iterateLine(line.lineDirection, line.start, false);
     const gap = iterateLine(line.lineDirection, line.end, true);
@@ -331,20 +328,22 @@ function identify(line, gamestate)
                 return Three; //pattern Aabbbæ
             }
         } else if (line.length === 4) {
-            return Four //pattern abbbbn
+            return Four; //pattern abbbbn
         }
     }
     return Other; //it fits none of the patterns
 }
 
 function playMove(node, gamestate) //give me a new gamestate after playing the set move
-{
+{//maybe we should make this more efficient.
     const gs = gamestate;
+    //console.log(gs.history);
     return new Gamestate(gs.rows, gs.cols, [...gs.history, node]);
 }
 
 const testState = new Gamestate(15, 15, moveHistory);
-
+testState.lines = identifyAll(testState);
+console.log(testState.lines.filter(line => line.length > 1));
 
 module.exports = findAllLines;
 
