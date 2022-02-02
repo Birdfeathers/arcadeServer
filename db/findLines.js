@@ -30,6 +30,7 @@ function Gamestate(rows, cols, history = [])
     this.board = result.board;
     this.lines = result.lines;
     this.lines = findAllOneAway(this);
+    this.lines = identifyAll(this);
     this.turn = history.length % 2 ? White : Black;
 }
 
@@ -118,7 +119,7 @@ function getTableVar(node, gamestate)
     const gs = gamestate;
     if(!isOnTable(node.row, node.col, gs.rows, gs.cols)) 
     {
-        return {color: None};
+        return {occupied: true, color: None};
     }
     return gs.board[node.row][node.col];
 }
@@ -243,40 +244,103 @@ function isAvailable(node, gamestate)
 {
     const gs = gamestate;
     out = getTableVar(node, gs).occupied;
+    out = out && !overline(node, gs);
     out = out && !threeThree(node, gs);
     out = out && !fourFour(node, gs);
     return out;
 }
 
-function threeThree(node, gamestate)
+function overline(node, gamestate)
 {
-    return true;
-}
-function fourFour(node, gamestate)
-{
+    //TODO
     return true;
 }
 
-//given a gamestate, modify and return the
-//lines in it so that threes and fours are marked
-function findThreesAndFours(gamestate)
+function threeThree(node, gamestate)
+{
+    //TODO
+    return true;
+}
+
+function fourFour(node, gamestate)
+{
+    //TODO
+    return true;
+}
+
+/* given a gamestate, modify and return the lines in it so that threes and
+** fours are marked. */
+function identifyAll(gamestate)
 {
     const gs = gamestate;
-    function identify(line)
-    {
-        const left = iterateLine(line.lineDirection, line.start, false);
-        const gap = iterateLine(line.lineDirection, line.end, true);
-        const lineAfter = gs.lines.find(l => l.lineNum === line.lineAfter);
-        const right = iterateLine(line.lineDirection, lineAfter.end, true);
-        if (isAvailable(getTableVar(gap, gs), gs)) {
+    //TODO
+    return gs.lines;
+}
+function identify(line, gamestate)
+{//TODO check again given that overline may be allowed if it is a win in another direction
+    const gs = gamestate;
+    const left = iterateLine(line.lineDirection, line.start, false);
+    const gap = iterateLine(line.lineDirection, line.end, true);
+    if (isAvailable(gap, gs)) {
+        if (line.lineAfter){
+            const rightLine = gs.lines.find(l => l.lineNum === line.lineAfter);
+            const right = iterateLine(line.lineDirection, rightLine.end, true);
             if (line.length === 1) {
-                if (lineAfter.length === 2){}//TODO
+                if (rightLine.length === 2) {
+                    const newState = playMove(gap, gs);
+                    if(isAvailable(left, newState) && isAvailable(right, newState)){
+                        return Three; //pattern AbabbA
+                    }
+                } else if (rightLine.length == 3){
+                    return Four; //pattern babbb
+                }
+            } else if (line.length === 2) {
+                if (rightLine.length === 1){
+                    const newState = playMove(gap, gs);
+                    if(isAvailable(left, newState) && isAvailable(right, newState)){
+                        return Three; //pattern AbbabA
+                    }
+                } else if (rightLine.length == 2){
+                    return Four //pattern bbabb
+                }
+            } else if (line.length == 3){
+                return Four //pattern bbbab
             }
         } else {
-            //TODO
+            const right = iterateLine(line.lineDirection, gap, true);
+            if (line.length == 3) {
+                let newState = playMove(gap, gs);
+                if(isAvailable(left, newState) && isAvailable(right, newState)){
+                    return Three; //patterns AəbbbəA, NəbbbaA, and æbbbaA
+                } else if (isAvailable(left, gs)){
+                    newState = playmove(left, gs);
+                    const lefter = iterateLine(line.lineDirection, left, false);
+                    if (isAvailable(lefter, newState) && isAvailable(gap, newState)){
+                        return Three; //pattern AabbbəN
+                    }
+                }
+            } else if (line.length == 4) {
+                return Four; //patterns abbbba and nbbbba
+            }
         }
-        return Other; //it fits none of the patterns
+    } else if (isAvailable(left, gs)){
+        if (line.length === 3){
+            const newState = playmove(left, gs);
+            const lefter = iterateLine(line.lineDirection, left, false);
+            if (isAvailable(lefter, newState) && isAvailable(gap, newState)){
+                return Three; //pattern Aabbbæ
+            }
+        } else if (line.length === 4) {
+            return Four //pattern abbbbn
+        }
     }
+    return Other; //it fits none of the patterns
+}
+
+function playMove(node, gamestate) //give me a new gamestate after playing the set move
+{
+    const gs = gamestate;
+    return new Gamestate(gs.rows, gs.cols, [...gs.history, node]);
 }
 
 const testState = new Gamestate(15, 15, moveHistory);
