@@ -88,7 +88,7 @@ function createFilledArray(gamestate)
         let turn;
         if(indx % 2 == 0) turn = Black;
         else turn = White;
-        arr1[move.row][move.col] = {occupied:true, color: turn, moveNum: indx + 1};
+        arr1[move.row][move.col] = {occupied:true, color: turn, moveNum: indx + 1, future: move.future};
     });
     return arr1;
 }
