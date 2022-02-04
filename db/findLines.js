@@ -306,6 +306,7 @@ function linesAndLinesBefore(node, gamestate)
     );
     //check for lines that have preceding line, then get those lines, unless
     //they may be fours that already existed
+    //TODO fours here may not work with longer lines?
     let linesBefore = lines
         .filter(line => line.lineBefore)
         .map(line => gs.lines.find(line => line.lineBefore))
@@ -315,28 +316,29 @@ function linesAndLinesBefore(node, gamestate)
 
 /* given a gamestate, modify a copy of and return the lines in it so that
 ** threes and fours are marked. */
-function identifyAll(gamestate)
+function identifyAll(gamestate, restrictions = allRestrictions)
 {
     const gs = gamestate;
     return gs.lines.map(line =>
         //a copy of the line with the lineType added
-        Object.assign({lineType: identify(line, gs)}, line
-    ));
+        Object.assign({lineType: identify(line, gs, restrictions)}, line)
+    );
 }
 
-function identify(line, gamestate)
+function identify(line, gamestate, restrictions = allRestrictions)
 {
     const gs = gamestate;
     const left = iterateLine(line.lineDirection, line.start, false);
     const gap = iterateLine(line.lineDirection, line.end, true);
-    if (isAvailable(gap, gs)) {
+    if (isAvailable(gap, gs, restrictions)) {
         if (line.lineAfter){
             const rightLine = gs.lines.find(l => l.lineNum === line.lineAfter);
             const right = iterateLine(line.lineDirection, rightLine.end, true);
             if (line.length === 1) {
                 if (rightLine.length === 2) {
                     const newState = playMove(gap, gs);
-                    if(isAvailable(left, newState) && isAvailable(right, newState)){
+                    if(isAvailable(left, newState, restrictions)
+                        && isAvailable(right, newState, restrictions)){
                         return Three; //pattern AbabbA
                     }
                 } else if (rightLine.length == 3){
@@ -345,7 +347,8 @@ function identify(line, gamestate)
             } else if (line.length === 2) {
                 if (rightLine.length === 1){
                     const newState = playMove(gap, gs);
-                    if(isAvailable(left, newState) && isAvailable(right, newState)){
+                    if(isAvailable(left, newState, restrictions)
+                        && isAvailable(right, newState, restrictions)){
                         return Three; //pattern AbbabA
                     }
                 } else if (rightLine.length == 2){
@@ -358,12 +361,14 @@ function identify(line, gamestate)
             const right = iterateLine(line.lineDirection, gap, true);
             if (line.length == 3) {
                 let newState = playMove(gap, gs);
-                if(isAvailable(left, newState) && isAvailable(right, newState)){
+                if(isAvailable(left, newState, restrictions)
+                    && isAvailable(right, newState, restrictions)){
                     return Three; //patterns AəbbbəA, NəbbbaA, and æbbbaA
-                } else if (isAvailable(left, gs)){
+                } else if (isAvailable(left, gs, restrictions)){
                     newState = playmove(left, gs);
                     const lefter = iterateLine(line.lineDirection, left, false);
-                    if (isAvailable(lefter, newState) && isAvailable(gap, newState)){
+                    if (isAvailable(lefter, newState, restrictions)
+                        && isAvailable(gap, newState, restrictions)){
                         return Three; //pattern AabbbəN
                     }
                 }
@@ -371,11 +376,12 @@ function identify(line, gamestate)
                 return Four; //patterns abbbba and nbbbba
             }
         }
-    } else if (isAvailable(left, gs)){
+    } else if (isAvailable(left, gs, restrictions)){
         if (line.length === 3){
             const newState = playmove(left, gs);
             const lefter = iterateLine(line.lineDirection, left, false);
-            if (isAvailable(lefter, newState) && isAvailable(gap, newState)){
+            if (isAvailable(lefter, newState, restrictions)
+                && isAvailable(gap, newState, restrictions)){
                 return Three; //pattern Aabbbæ
             }
         } else if (line.length === 4) {
@@ -385,14 +391,15 @@ function identify(line, gamestate)
     return Other; //it fits none of the patterns
 }
 
-function playMove(node, gamestate) //give me a new gamestate after playing the set move
+//give me a new gamestate after playing the set move
+function playMove(node, gamestate)
 {//maybe we should make this more efficient.
     const gs = gamestate;
     return new Gamestate(gs.rows, gs.cols, [...gs.history, node]);
 }
 
 const testState = new Gamestate(15, 15, moveHistory);
-testState.lines = identifyAll(testState);
+testState.lines = identifyAll(testState, allRestrictions);
 
 module.exports = findAllLines;
 
