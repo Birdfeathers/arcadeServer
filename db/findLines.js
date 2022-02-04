@@ -24,7 +24,22 @@ const allRestrictions = new Restrictions(true, true, true);
 ** add these to the code much mostly because they would make it longer. Mostly
 ** I just wanted these as some kind of documentation of what each type of object
 ** contains. */
-// constructor for gamestate from a move history
+/**
+ * constructor for gamestate from a move history and board size alone. This
+ * constructor automatically calls findAllLines and findAllOneAway on the new
+ * gamestate.
+ * @constructor
+ * @classdesc A gamestate represents the abstract state that the actual board
+ * is in - the history of moves, the current state of the board, the board
+ * size, and any other information useful for abstractly calculating actual
+ * rules or strategies of the game. It does not contain other information such
+ * as the players or time control information.
+ * @param {number} rows A positive integer representing the number of rows the
+ * board has.
+ * @param {number} cols A positive integer representing the number of columns
+ * the board has.
+ * @param {Node[]} history A list of all moves played in the game so far.
+ */
 function Gamestate(rows, cols, history = [])
 {
     this.rows = rows;
