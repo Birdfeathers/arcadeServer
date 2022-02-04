@@ -2,19 +2,23 @@
 /* below are some enum-like constants - I changed references to the constants
 ** into references to these vars to avoid magic numbers. */
 // constants representing stone colors
-const White = "white"
-const Black = "black"
-const None = "none"
-// constants for representing line directions
-const Horizontal = "horizontal"
-const Vertical = "vertical"
-const Negative = "negative"
-const Positive = "positive"
+const White = "white";
+const Black = "black";
+const None = "none";
+// constants for representing line dir;ections
+const Horizontal = "horizontal";
+const Vertical = "vertical";
+const Negative = "negative";
+const Positive = "positive";
+
 /* constants for representing whether a line is the beginning of a three or a
 ** four or neither */
-const Three = 3
-const Four = 4
-const Other = 0
+const Three = 3;
+const Four = 4;
+const Other = 0;
+
+const noRestrictions = new Restrictions(false, false, false);
+const allRestrictions = new Restrictions(true, true, true);
 
 /* constructors for all of the types of objects we use in this file; I didn't
 ** add these to the code much mostly because they would make it longer. Mostly
@@ -65,6 +69,13 @@ function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undef
     this.lineType = lineType;
 }
 
+function Restrictions(overline, threeThree, fourFour)
+{
+    this.overline = overline;
+    this.threeThree = threeThree;
+    this.fourFour = fourFour;
+}
+
 function createBlankArray(rows, cols)
 {
     let arr = [];
@@ -95,7 +106,7 @@ function createFilledArray(gamestate)
 
 function iterateLine(lineDirection, node, forward = true)
 {
-        if(lineDirection != Vertical)
+        if(lineDirection !== Vertical)
         {
             if(forward) node.col++;
             else node.col--;
@@ -231,33 +242,45 @@ const moveHistory = [
 {row: 10, col: 1}
 ];
 
-function isAvailable(node, gamestate)
+// returns a value saying which restrictions a move violated of the form
+// {overline, threeThree, fourFour}, all bools, true if violated.
+function violations(node, gamestate)
 {
+    //check whether there is any overline, then three-three or four-four.
+    const overline = (gamestate.lines.filter(line => line.length > 5).length !== 0);
+    const threeThree = checkThreeThree(node, gamestate);
+    const fourFour = checkFourFour(node, gamestate);
+    return {overline, threeThree, fourFour};
+}
+
+// pass in a value saying which restrictions you want created with the
+// Restrictions constructor.
+function isAvailable(node, gamestate, restrictions = allRestrictions)
+{   
     const gs = gamestate;
     //an occupied or nonexistant space is never allowed.
-    if (getTableVar(node, gs).occupied){
-        return false;
-    }
+    if (getTableVar(node, gamestate).occupied) return false;
     const newState = playMove(node, gs); //this should really be returned or smth
     //if there is a win, it is always available.
-    if (newState.lines.filter(line => line.length === 5).length > 0){
+    if (gamestate.lines.filter(line => line.length === 5).length > 0){
         return true;
     }
-    //check that there is no overline, then no threethree or fourfour.
-    let out = (newState.lines.filter(line => line.length > 5).length === 0);
-    out = out && !threeThree(node, newState);
-    out = out && !fourFour(node, newState);
+    // otherwise check that the violations are not true if they are restricted.
+    const viols = violations(node, gamestate, restrictions);
+    const out = !(restrictions.overline && viols.overline)
+        && !(restrictions.threeThree && viols.threeThree)
+        && !(restrictions.fourFour && viols.fourFour);
     return out;
 }
 
-function threeThree(node, gamestate)
+function checkThreeThree(node, gamestate)
 {
     const lalb = linesAndLinesBefore(node, gamestate);
     const fours = lalb.filter(line => line.lineType == Three);
     return fours.length >= 2;
 }
 
-function fourFour(node, gamestate)
+function checkFourFour(node, gamestate)
 {
     const lalb = linesAndLinesBefore(node, gamestate);
     const fours = lalb.filter(line => line.lineType == Four);
@@ -286,7 +309,7 @@ function linesAndLinesBefore(node, gamestate)
     let linesBefore = lines
         .filter(line => line.lineBefore)
         .map(line => gs.lines.find(line => line.lineBefore))
-        .filter(line => line.length != 4)
+        .filter(line => line.length !== 4)
     return [...lines, ...linesBefore];
 }
 
