@@ -22,8 +22,10 @@ const allRestrictions = new Restrictions(true, true, true);
 
 /* constructors for all of the types of objects we use in this file; I didn't
 ** add these to the code much mostly because they would make it longer. Mostly
-** I just wanted these as some kind of documentation of what each type of object
-** contains. */
+** I just wanted these as some kind of documentation of what each type of
+** object contains. For any of these "classes" you should just be able to use
+** any objects that have properties with the correct names and types. Maybe in
+** the future I will replace contructors with factory functions. */
 /**
  * constructor for gamestate from a move history and board size alone. This
  * constructor automatically calls findAllLines and findAllOneAway on the new
