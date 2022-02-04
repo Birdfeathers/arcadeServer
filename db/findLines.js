@@ -309,7 +309,11 @@ function linesAndLinesBefore(node, gamestate)
     //TODO fours here may not work with longer lines?
     let linesBefore = lines
         .filter(line => line.lineBefore)
-        .map(line => gs.lines.find(line => line.lineBefore))
+        .map(lineCurrent =>
+            gs.lines.find(line =>
+                line.lineNum === lineCurrent.lineBefore
+            )
+        )
         .filter(line => line.length !== 4)
     return [...lines, ...linesBefore];
 }
