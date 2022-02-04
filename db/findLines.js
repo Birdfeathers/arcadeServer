@@ -52,7 +52,7 @@ function Node(row, column)
 }
 
 // constructor for a line, that is, what is called a row in the rule
-function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undefined, lineBefore=undefined, linetype=undefined)
+function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undefined, lineBefore=undefined, lineType=undefined)
 {
     this.length = length;
     this.color = color;
@@ -60,9 +60,9 @@ function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undef
     this.lineDirection = lineDirection;
     this.start = start;
     this.end = end;
-    this.lineAfter = lineAfter
-    this.lineBefore = lineBefore
-    this.lineType = lineType
+    this.lineAfter = lineAfter;
+    this.lineBefore = lineBefore;
+    this.lineType = lineType;
 }
 
 function createBlankArray(rows, cols)
@@ -238,28 +238,56 @@ function isAvailable(node, gamestate)
     if (getTableVar(node, gs).occupied){
         return false;
     }
-    const newState = playMove(node, gs);
+    const newState = playMove(node, gs); //this should really be returned or smth
     //if there is a win, it is always available.
     if (newState.lines.filter(line => line.length === 5).length > 0){
         return true;
     }
     //check that there is no overline, then no threethree or fourfour.
     let out = (newState.lines.filter(line => line.length > 5).length === 0);
-    out = out && !threeThree(node, gs);
-    out = out && !fourFour(node, gs);
+    out = out && !threeThree(node, newState);
+    out = out && !fourFour(node, newState);
     return out;
 }
 
 function threeThree(node, gamestate)
 {
-    //TODO
-    return false;
+    const lalb = linesAndLinesBefore(node, gamestate);
+    const fours = lalb.filter(line => line.lineType == Three);
+    return fours.length >= 2;
 }
 
 function fourFour(node, gamestate)
 {
-    //TODO
-    return false;
+    const lalb = linesAndLinesBefore(node, gamestate);
+    const fours = lalb.filter(line => line.lineType == Four);
+    return fours.length >= 2;
+}
+
+/**
+ *
+ * @param {Node} node 
+ * @param {Gamestate} gamestate 
+ * @return {Line[]} The lines in gamestate that contain node, as well as any
+ * lines that precede them with a gap of 1, ignoring 4s that already existed.
+ */
+function linesAndLinesBefore(node, gamestate)
+{
+    const dirs = [Horizontal, Vertical, Positive, Negative];
+    const gs = gamestate;
+    const stone = getTableVar(node, gs);
+    if (stone.color === None) return [];
+    //get the lines corresponding to the numbers stored in stone
+    let lines = dirs.map(dir =>
+        gs.lines.find(line => line.lineNum === stone[dir])
+    );
+    //check for lines that have preceding line, then get those lines, unless
+    //they may be fours that already existed
+    let linesBefore = lines
+        .filter(line => line.lineBefore)
+        .map(line => gs.lines.find(line => line.lineBefore))
+        .filter(line => line.length != 4)
+    return [...lines, ...linesBefore];
 }
 
 /* given a gamestate, modify a copy of and return the lines in it so that
@@ -337,13 +365,11 @@ function identify(line, gamestate)
 function playMove(node, gamestate) //give me a new gamestate after playing the set move
 {//maybe we should make this more efficient.
     const gs = gamestate;
-    //console.log(gs.history);
     return new Gamestate(gs.rows, gs.cols, [...gs.history, node]);
 }
 
 const testState = new Gamestate(15, 15, moveHistory);
 testState.lines = identifyAll(testState);
-console.log(testState.lines.filter(line => line.length > 1));
 
 module.exports = findAllLines;
 
