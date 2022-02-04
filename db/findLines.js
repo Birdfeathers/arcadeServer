@@ -20,8 +20,16 @@ const Three = 3;
 const Four = 4;
 const Other = 0;
 
-const noRestrictions = {overline: false, threeThree: false, fourFour: false};
-const allRestrictions = {overline: true, threeThree: true, fourFour: true};
+const noRestrictions = Object.freeze({
+    overline: false,
+    threeThree: false,
+    fourFour: false
+});
+const allRestrictions = Object.freeze({
+    overline: true,
+    threeThree: true,
+    fourFour: true
+});
 
 /* constructors for all of the types of objects we use in this file; I didn't
 ** add these to the code much mostly because they would make it longer. Mostly
@@ -86,6 +94,14 @@ function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undef
     this.lineBefore = lineBefore;
     this.lineType = lineType;
 }
+
+/**A simple object for keeping track of which restrictions you want to place
+ * on Black, or to keep track of for the purposes of threes and fours.
+ * @typedef Restrictions
+ * @property {boolean} overline
+ * @property {boolean} threeThree
+ * @property {boolean} fourFour
+ */
 
 function createBlankArray(rows, cols)
 {
