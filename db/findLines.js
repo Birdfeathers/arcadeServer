@@ -1,4 +1,7 @@
 'use strict';
+
+const { statement_timeout } = require("pg/lib/defaults");
+
 /* below are some enum-like constants - I changed references to the constants
 ** into references to these vars to avoid magic numbers. */
 // constants representing stone colors
@@ -17,8 +20,8 @@ const Three = 3;
 const Four = 4;
 const Other = 0;
 
-const noRestrictions = new Restrictions(false, false, false);
-const allRestrictions = new Restrictions(true, true, true);
+const noRestrictions = {overline: false, threeThree: false, fourFour: false};
+const allRestrictions = {overline: true, threeThree: true, fourFour: true};
 
 /* constructors for all of the types of objects we use in this file; I didn't
 ** add these to the code much mostly because they would make it longer. Mostly
@@ -27,43 +30,41 @@ const allRestrictions = new Restrictions(true, true, true);
 ** any objects that have properties with the correct names and types. Maybe in
 ** the future I will replace contructors with factory functions. */
 /**
- * constructor for gamestate from a move history and board size alone. This
- * constructor automatically calls findAllLines and findAllOneAway on the new
+ * factory function for gamestate from a move history and board size alone.
+ * This function automatically calls findAllLines and findAllOneAway on the new
  * gamestate.
- * @constructor
- * @classdesc A gamestate represents the abstract state that the actual board
- * is in - the history of moves, the current state of the board, the board
- * size, and any other information useful for abstractly calculating actual
- * rules or strategies of the game. It does not contain other information such
- * as the players or time control information.
  * @param {number} rows A positive integer representing the number of rows the
  * board has.
  * @param {number} cols A positive integer representing the number of columns
  * the board has.
  * @param {Node[]} history A list of all moves played in the game so far.
+ * @returns {Gamestate}
  */
-function Gamestate(rows, cols, history = [])
+function constructGamestate(rows, cols, history = [])
 {
-    this.rows = rows;
-    this.cols = cols;
-    this.history = history;
-    const result = findAllLines(this);
-    this.board = result.board;
-    this.lines = result.lines;
-    this.lines = findAllOneAway(this);
-    this.turn = history.length % 2 ? White : Black;
+    let state = {rows, cols, history};
+    const result = findAllLines(state);
+    state.board = result.board;
+    state.lines = result.lines;
+    state.lines = findAllOneAway(state);
+    state.turn = history.length % 2 ? White : Black;
+    return state;
 }
 
-// constructor for gamestate from all custom values
-function GamestateCustom(rows, cols, history, board, lines, turn)
-{
-    this.rows = rows;
-    this.cols = cols;
-    this.history = history;
-    this.board = board;
-    this.lines = lines;
-    this.turn = turn;
-}
+
+/**A gamestate represents the abstract state that the actual board
+ * is in - the history of moves, the current state of the board, the board
+ * size, and any other information useful for abstractly calculating actual
+ * rules or strategies of the game. It does not contain other information such
+ * as the players or time control information.
+ * @typedef Gamestate
+ * @property {number} rows
+ * @property {number} cols
+ * @property {Node[]} history
+ * @property {Location[][]} board
+ * @property {Line[]} lines
+ * @property {string} turn whose turn it is
+ */
 
 // constructor for a "node," that is, a row and column for a bourd location.
 function Node(row, column)
@@ -84,13 +85,6 @@ function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undef
     this.lineAfter = lineAfter;
     this.lineBefore = lineBefore;
     this.lineType = lineType;
-}
-
-function Restrictions(overline, threeThree, fourFour)
-{
-    this.overline = overline;
-    this.threeThree = threeThree;
-    this.fourFour = fourFour;
 }
 
 function createBlankArray(rows, cols)
@@ -351,6 +345,9 @@ function identify(line, gamestate, restrictions = allRestrictions)
     const gs = gamestate;
     const left = iterateLine(line.lineDirection, line.start, false);
     const gap = iterateLine(line.lineDirection, line.end, true);
+    /* below is some ugly logic for detecting patterns for threes and fours;
+    ** I do not know how to make it prettier*/
+    //todo new four patterns if restrictions.overline is false
     if (isAvailable(gap, gs, restrictions)) {
         if (line.lineAfter){
             const rightLine = gs.lines.find(l => l.lineNum === line.lineAfter);
@@ -416,10 +413,10 @@ function identify(line, gamestate, restrictions = allRestrictions)
 function playMove(node, gamestate)
 {//maybe we should make this more efficient.
     const gs = gamestate;
-    return new Gamestate(gs.rows, gs.cols, [...gs.history, node]);
+    return constructGamestate(gs.rows, gs.cols, [...gs.history, node]);
 }
 
-const testState = new Gamestate(15, 15, moveHistory);
+const testState = constructGamestate(15, 15, moveHistory);
 testState.lines = identifyAll(testState, allRestrictions);
 
 module.exports = findAllLines;
