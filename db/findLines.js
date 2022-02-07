@@ -413,7 +413,7 @@ function identify(line, gamestate, restrictions = allRestrictions)
         }
     } else if (isAvailable(left, gs, restrictions)){
         if (line.length === 3){
-            const newState = playmove(left, gs);
+            const newState = playMove(left, gs);
             const lefter = iterateLine(line.lineDirection, left, false);
             if (isAvailable(lefter, newState, restrictions)
                 && isAvailable(gap, newState, restrictions)){
