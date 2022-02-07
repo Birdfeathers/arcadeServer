@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const DB_NAME = 'arcade_db'
 const DB_URL = process.env.DATABASE_URL || `postgres://localhost:5432/${ DB_NAME }`;
 const client = new Client(DB_URL);
-const findAllLines  = require('./findLines');
+const {findAllLines, checkViolations } = require('./findLines');
 
 const bcrypt = require('bcrypt'); // import bcrypt
 
@@ -224,9 +224,8 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       let game = await getGame(id);
       let win = game.winner;
       if(win) throw Error("Game Already over");
-      console.log("in here")
+      const violations = checkViolations(moveHistory, game.rows, game.cols, {overline:true, threeThree: true, fourFour: true});
       const result = findAllLines({history: moveHistory, rows: game.rows, cols: game.cols});
-      console.log("out");
       const winLines = result.lines.filter(line => line.length >= game.towin);
       if(!win && winLines.length > 0){ 
         updateWinner(id, winLines[0].color);
@@ -234,7 +233,7 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       }
       const moves = await updateMoves(id, moveHistory);
       if(!win && JSON.parse(moves.movehistory).length === game.rows * game.cols) updateWinner(id, "tie");
-      return {moves, winLines, board: result.board};
+      return {moves, winLines, board: result.board, violations};
     } catch(error)
     {
       throw error;

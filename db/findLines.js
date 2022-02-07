@@ -399,7 +399,7 @@ function identify(line, gamestate, restrictions = allRestrictions)
                     && isAvailable(right, newState, restrictions)){
                     return Three; //patterns AəbbbəA, NəbbbaA, and æbbbaA
                 } else if (isAvailable(left, gs, restrictions)){
-                    newState = playmove(left, gs);
+                    newState = playMove(left, gs);
                     const lefter = iterateLine(line.lineDirection, left, false);
                     if (isAvailable(lefter, newState, restrictions)
                         && isAvailable(gap, newState, restrictions)){
@@ -435,5 +435,56 @@ function playMove(node, gamestate)
 const testState = constructGamestate(15, 15, moveHistory);
 testState.lines = identifyAll(testState, allRestrictions);
 
-module.exports = findAllLines;
+function checkViolations(history, rows, cols, restrictions)
+{
+    const node = history.pop();
+    let state = constructGamestate(rows, cols, history);
+    state.lines = identifyAll(state, restrictions);
+    return violations(node,  state);
+
+}
+
+const threeThree = [
+    {row: 6, col: 7},
+    {row: 1, col: 3},
+    {row: 5, col: 7},
+    {row: 1, col: 4},
+    {row: 6, col: 8},
+    {row: 1, col: 5},
+    {row: 5, col: 9},
+    {row: 1, col: 6},
+    {row: 7, col: 7}
+]
+
+const fourFour = [
+    {row: 6, col: 7},
+    {row: 0, col: 2},
+    {row: 5, col: 7},
+    {row: 0, col: 3},
+    {row: 4, col: 7},
+    {row: 0, col: 4},
+    {row: 7, col: 8},
+    {row: 0, col: 5},
+    {row: 7, col: 9},
+    {row: 14, col: 2},
+    {row: 7, col: 10},
+    {row: 14, col: 3},
+    {row: 7, col: 7}
+]
+
+const overline = [
+    {row: 6, col: 6},
+    {row: 0, col: 5},
+    {row: 6, col: 7},
+    {row: 0, col: 6},
+    {row: 6, col: 9},
+    {row: 0, col: 7},
+    {row: 6, col: 10},
+    {row: 0, col: 8},
+    {row: 6, col: 11},
+    {row: 2, col: 2},
+    {row: 6, col: 8}
+]
+
+module.exports = {findAllLines, checkViolations};
 

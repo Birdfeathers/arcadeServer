@@ -6,7 +6,7 @@ const {
     getGamesByUser,
     updateMoveHistory}
 = require('../db/index');
-const findAllLines  = require('../db/findLines');
+const {findAllLines}  = require('../db/findLines');
 const {requireUser} = require('./utils');
 
 // registration/ create new user
