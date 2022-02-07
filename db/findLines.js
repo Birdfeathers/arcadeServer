@@ -69,31 +69,33 @@ function constructGamestate(rows, cols, history = [])
  * @property {number} rows
  * @property {number} cols
  * @property {Node[]} history
- * @property {Location[][]} board
+ * @property {BoardSpace[][]} board
  * @property {Line[]} lines
  * @property {string} turn whose turn it is
  */
 
-// constructor for a "node," that is, a row and column for a bourd location.
-function Node(row, column)
-{
-    this.row = row;
-    this.col = column;
-}
+/**A "node" is a row and column coordinate pair for a board location.
+ * @typedef Node
+ * @property {number} row a non-negative integer
+ * @property {number} column a non-negative integer
+ */
 
-// constructor for a line, that is, what is called a row in the rule
-function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undefined, lineBefore=undefined, lineType=undefined)
-{
-    this.length = length;
-    this.color = color;
-    this.lineNum = lineNum;
-    this.lineDirection = lineDirection;
-    this.start = start;
-    this.end = end;
-    this.lineAfter = lineAfter;
-    this.lineBefore = lineBefore;
-    this.lineType = lineType;
-}
+/**A "line" is what is called a row in my (Ian's) translated ruleset: a set of
+ * stones of the same color that runs contiguously vertically, horizontally, or
+ * diagonally.
+ * @typedef Line
+ * @property {number} length a positive integer
+ * @property {string} color one of the "white", "black", or "none".
+ * @property {number} lineNum a positive integer; a unique id of this line for
+ * this board.
+ * @property {string} lineDirection one of "horizontal", "vertical", "positive",
+ * or "negative".
+ * @property {Node} start
+ * @property {Node} end
+ * @property {number} lineAfter a lineNum.
+ * @property {number} lineBefore a lineNum.
+ * @property {number} lineType either Three, Four, or Other.
+*/
 
 /**A simple object for keeping track of which restrictions you want to place
  * on Black, or to keep track of for the purposes of threes and fours.
@@ -101,6 +103,22 @@ function Line(length, color, lineNum, lineDirection, start, end, lineAfter=undef
  * @property {boolean} overline
  * @property {boolean} threeThree
  * @property {boolean} fourFour
+ */
+
+/**A "BoardSpace" represents what, if anything, fills an intersection on the
+ * board. An intersection off the board should have occupied: true and color:
+ * None, but other properties will be undefined. The direction properties
+ * represent the lineNum of the line that this stone is a part of in each
+ * direction.
+ * @typedef BoardSpace
+ * @property {boolean} occupied
+ * @property {string} color
+ * @property {number} horizontal a lineNum
+ * @property {number} vertical a lineNum
+ * @property {number} positive a lineNum
+ * @property {number} negative a lineNum
+ * @property {number} moveNum the turn this move was played
+ * @property {boolean} future
  */
 
 function createBlankArray(rows, cols)
