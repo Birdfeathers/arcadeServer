@@ -437,10 +437,9 @@ testState.lines = identifyAll(testState, allRestrictions);
 
 function checkViolations(history, rows, cols, restrictions)
 {
-    const node = history.pop();
     let state = constructGamestate(rows, cols, history);
     state.lines = identifyAll(state, restrictions);
-    return violations(node,  state);
+    return violations(history[history.length -1],  state);
 
 }
 
