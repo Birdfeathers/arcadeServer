@@ -271,12 +271,12 @@ const moveHistory = [
 
 // returns a value saying which restrictions a move violated of the form
 // {overline, threeThree, fourFour}, all bools, true if violated.
-function violations(node, gamestate)
+function violations(gamestate)
 {
     //check whether there is any overline, then three-three or four-four.
     const overline = (gamestate.lines.filter(line => line.length > 5).length !== 0);
-    const threeThree = checkThreeThree(node, gamestate);
-    const fourFour = checkFourFour(node, gamestate);
+    const threeThree = checkThreeThree(gamestate);
+    const fourFour = checkFourFour(gamestate);
     return {overline, threeThree, fourFour};
 }
 
@@ -289,27 +289,27 @@ function isAvailable(node, gamestate, restrictions = allRestrictions)
     if (getTableVar(node, gamestate).occupied) return false;
     const newState = playMove(node, gs); //this should really be returned or smth
     //if there is a win, it is always available.
-    if (gamestate.lines.filter(line => line.length === 5).length > 0){
+    if (newState.lines.filter(line => line.length === 5).length > 0){
         return true;
     }
     // otherwise check that the violations are not true if they are restricted.
-    const viols = violations(node, gamestate, restrictions);
+    const viols = violations(newState, restrictions);
     const out = !(restrictions.overline && viols.overline)
         && !(restrictions.threeThree && viols.threeThree)
         && !(restrictions.fourFour && viols.fourFour);
     return out;
 }
 
-function checkThreeThree(node, gamestate)
+function checkThreeThree(gamestate)
 {
-    const lalb = linesAndLinesBefore(node, gamestate);
+    const lalb = linesAndLinesBefore(gamestate);
     const fours = lalb.filter(line => line.lineType == Three);
     return fours.length >= 2;
 }
 
-function checkFourFour(node, gamestate)
+function checkFourFour(gamestate)
 {
-    const lalb = linesAndLinesBefore(node, gamestate);
+    const lalb = linesAndLinesBefore(gamestate);
     const fours = lalb.filter(line => line.lineType == Four);
     return fours.length >= 2;
 }
@@ -321,10 +321,11 @@ function checkFourFour(node, gamestate)
  * @return {Line[]} The lines in gamestate that contain node, as well as any
  * lines that precede them with a gap of 1, ignoring 4s that already existed.
  */
-function linesAndLinesBefore(node, gamestate)
+function linesAndLinesBefore(gamestate)
 {
     const dirs = [Horizontal, Vertical, Positive, Negative];
     const gs = gamestate;
+    const node = gamestate.history[gamestate.history.length - 1];
     const stone = getTableVar(node, gs);
     if (stone.color === None) return [];
     //get the lines corresponding to the numbers stored in stone
@@ -439,11 +440,11 @@ function checkViolations(history, rows, cols, restrictions)
 {
     let state = constructGamestate(rows, cols, history);
     state.lines = identifyAll(state, restrictions);
-    return violations(history[history.length -1],  state);
+    return violations(state);
 
 }
 
-const threeThree = [
+const threeThreeHistory = [
     {row: 6, col: 7},
     {row: 1, col: 3},
     {row: 5, col: 7},
@@ -455,7 +456,7 @@ const threeThree = [
     {row: 7, col: 7}
 ]
 
-const fourFour = [
+const fourFourHistory = [
     {row: 6, col: 7},
     {row: 0, col: 2},
     {row: 5, col: 7},
@@ -471,7 +472,7 @@ const fourFour = [
     {row: 7, col: 7}
 ]
 
-const overline = [
+const overlineHistory = [
     {row: 6, col: 6},
     {row: 0, col: 5},
     {row: 6, col: 7},
