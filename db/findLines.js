@@ -597,7 +597,7 @@ function findWinningLines(gs, towin)
 {
     const result = findAllLines(gs);
     let winLines = result.lines.filter(line => line.length >= towin);
-    const last  = gs.history.pop();
+    const last  = gs.history[gs.history.length - 1];
     console.log(last);
     if(last)
         if(last.illegal){
