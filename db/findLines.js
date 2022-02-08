@@ -170,7 +170,8 @@ function createFilledArray(gamestate)
             occupied:true,
             color: turn,
             moveNum: indx + 1,
-            future: move.future
+            future: move.future,
+            illegal: move.illegal
         };
     });
     return arr1;
@@ -585,6 +586,7 @@ function playMove(node, gamestate)
  */
 function checkViolations(history, rows, cols, restrictions)
 {
+    if(!(history.length % 2)) return({});
     let state = constructGamestate(rows, cols, history);
     state.lines = identifyAll(state, restrictions);
     return violations(state);

@@ -6,24 +6,25 @@ const {
     getGamesByUser,
     updateMoveHistory}
 = require('../db/index');
-const {findAllLines}  = require('../db/findLines');
+const {findAllLines, checkViolations}  = require('../db/findLines');
 const {requireUser} = require('./utils');
 
 // registration/ create new user
 gamesRouter.post('/newgame', requireUser, async(req, res, next) => {
-    const owner = req.user.id;
-    const {rows, cols, toWin, against, goesFirst} = req.body;
-    let playerOne, playerTwo;
+    const variables = req.body
+    variables.owner = req.user.id;
+    variables.moveHistory = "";
+    const {against, goesFirst} = req.body;
     if(goesFirst){
-        playerOne = owner;
-        playerTwo = against;
+        variables.playerOne = variables.owner;
+        variables.playerTwo = against;
     } else{
-        playerOne = against;
-        playerTwo = owner
+        variables.playerOne = against;
+        variables.playerTwo = variables.owner
     }
     
     try{
-        const game = await createGame({rows, cols, toWin, playerOne, playerTwo, owner, moveHistory:""});
+        const game = await createGame(variables);
         res.send(game); 
     } catch(error){
         next(error);
@@ -62,11 +63,31 @@ gamesRouter.patch('/move', requireUser, async (req, res, next) => {
 gamesRouter.post('/winLines', async (req, res, next) => {
     try{
         const {moveHistory, rows, cols, towin} = req.body;
+        console.log("moveHistory", moveHistory);
+        let winLines = [];
+        console.log("in")
         const result = findAllLines({history: moveHistory, rows: rows, cols: cols});
-        const winLines = result.lines.filter(line => line.length >= towin);
+        winLines = result.lines.filter(line => line.length >= towin);
+        const last  = moveHistory.pop();
+        console.log("last", last)
+        if(last){
+         if(last.illegal)winLines = [{color: "white", lineNum: -1}];
+        }
         res.send({winLines, board: result.board});
     } catch(error){
         next(error);
     }
 })
+
+gamesRouter.post('/violations', async (req, res, next) => {
+    try{
+        const {moveHistory, rows, cols, overline, threeThree, fourFour} = req.body;
+        const result = checkViolations(moveHistory, rows, cols, {overline, threeThree, fourFour});
+        res.send(result);
+
+    } catch(error){
+        next(error);
+    }
+})
+
 module.exports = gamesRouter;

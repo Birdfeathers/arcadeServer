@@ -87,7 +87,7 @@ async function checkLogin({username, password}) {
   async function getAllUsers(){ // select all the users
     try {
       const {rows: users} = await client.query(`
-        SELECT *
+        SELECT id, username
         FROM users;
       `);
       return users;   // return all the users
@@ -118,14 +118,14 @@ async function changeUserPassword({id, password})
 
 //============== Games ==============================
 
-async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory, owner}) {
+async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory, owner, overline = 0, threeThree = 0, fourFour = 0, giveWarning = 0}) {
 
     try {
         const {rows: [game]} = await client.query(`
-            INSERT INTO games (rows, cols, toWin, "playerOne", "playerTwo", moveHistory, "owner")
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO games (rows, cols, toWin, "playerOne", "playerTwo", moveHistory, "owner", noOverline, noThreeThree, noFourFour, giveWarning)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *;
-        `, [rows, cols, toWin, playerOne, playerTwo, moveHistory, owner]);  // create user in db
+        `, [rows, cols, toWin, playerOne, playerTwo, moveHistory, owner, overline, threeThree, fourFour, giveWarning]);  // create user in db
         return game;
     }
     catch (error) {
@@ -192,7 +192,8 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
             CASE
              WHEN length(moveHistory) < length($1) THEN $1
              ElSE moveHistory
-            END
+            END,
+            lastUpdate = CURRENT_TIMESTAMP
             WHERE id = $2
             RETURNING moveHistory;
           `, [moveHistory, id])
@@ -224,10 +225,20 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       let game = await getGame(id);
       let win = game.winner;
       if(win) throw Error("Game Already over");
-      const violations = checkViolations(moveHistory, game.rows, game.cols, {overline:true, threeThree: true, fourFour: true});
+      const violations = checkViolations(moveHistory, game.rows, game.cols, {overline: game.overline, threeThree: game.threethree, fourFour: game.fourfour});
       const result = findAllLines({history: moveHistory, rows: game.rows, cols: game.cols});
-      const winLines = result.lines.filter(line => line.length >= game.towin);
-      if(!win && winLines.length > 0){ 
+      let winLines = result.lines.filter(line => line.length >= game.towin);
+      if(violations.overline || violations.threeThree|| violations.fourFour)
+      {
+        let color;
+        if(moveHistory.length % 2) color = "white";
+        else color = "black";
+        console.log("passed")
+        winLines = [];
+        moveHistory[moveHistory.length - 1].illegal = true;
+        updateWinner(id,"white");
+
+      } else if(!win && winLines.length > 0){ 
         updateWinner(id, winLines[0].color);
         win = true;
       }
