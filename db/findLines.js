@@ -144,7 +144,7 @@ function createFilledArray(gamestate)
         let turn;
         if(indx % 2 == 0) turn = Black;
         else turn = White;
-        arr1[move.row][move.col] = {occupied:true, color: turn, moveNum: indx + 1, future: move.future};
+        arr1[move.row][move.col] = {occupied:true, color: turn, moveNum: indx + 1, future: move.future, illegal: move.illegal};
     });
     return arr1;
 }
@@ -456,6 +456,7 @@ testState.lines = identifyAll(testState, allRestrictions);
 
 function checkViolations(history, rows, cols, restrictions)
 {
+    if(!(history.length % 2)) return({});
     let state = constructGamestate(rows, cols, history);
     state.lines = identifyAll(state, restrictions);
     return violations(state);

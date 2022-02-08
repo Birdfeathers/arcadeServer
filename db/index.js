@@ -227,7 +227,7 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       if(win) throw Error("Game Already over");
       const violations = checkViolations(moveHistory, game.rows, game.cols, {overline: game.overline, threeThree: game.threethree, fourFour: game.fourfour});
       const result = findAllLines({history: moveHistory, rows: game.rows, cols: game.cols});
-      const winLines = result.lines.filter(line => line.length >= game.towin);
+      let winLines = result.lines.filter(line => line.length >= game.towin);
       if(violations.overline || violations.threeThree|| violations.fourFour)
       {
         let color;
@@ -235,7 +235,8 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
         else color = "black";
         console.log("passed")
         winLines = [];
-        updateWinner(id, color);
+        moveHistory[moveHistory.length - 1].illegal = true;
+        updateWinner(id,"white");
 
       } else if(!win && winLines.length > 0){ 
         updateWinner(id, winLines[0].color);
