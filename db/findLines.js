@@ -593,6 +593,19 @@ function checkViolations(history, rows, cols, restrictions)
 
 }
 
+function findWinningLines(gs, towin)
+{
+    const result = findAllLines(gs);
+    let winLines = result.lines.filter(line => line.length >= towin);
+    const last  = gs.history.pop();
+    console.log(last);
+    if(last)
+        if(last.illegal){
+            winLines = [{color: "white", lineNum: -1}];
+        }
+    return {winLines, board: result.board};
+}
+
 const threeThreeHistory = [
     {row: 6, col: 7},
     {row: 1, col: 3},
@@ -641,5 +654,5 @@ let y = iterateLine(Horizontal, x)
 console.log(JSON.stringify(x));
 console.log(JSON.stringify(y));
 
-module.exports = {findAllLines, checkViolations};
+module.exports = {findAllLines, findWinningLines, checkViolations};
 

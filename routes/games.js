@@ -6,7 +6,7 @@ const {
     getGamesByUser,
     updateMoveHistory}
 = require('../db/index');
-const {findAllLines, checkViolations}  = require('../db/findLines');
+const {findAllLines, checkViolations, findWinningLines}  = require('../db/findLines');
 const {requireUser} = require('./utils');
 
 // registration/ create new user
@@ -64,16 +64,8 @@ gamesRouter.post('/winLines', async (req, res, next) => {
     try{
         const {moveHistory, rows, cols, towin} = req.body;
         console.log("moveHistory", moveHistory);
-        let winLines = [];
-        console.log("in")
-        const result = findAllLines({history: moveHistory, rows: rows, cols: cols});
-        winLines = result.lines.filter(line => line.length >= towin);
-        const last  = moveHistory.pop();
-        console.log("last", last)
-        if(last){
-         if(last.illegal)winLines = [{color: "white", lineNum: -1}];
-        }
-        res.send({winLines, board: result.board});
+        const result = findWinningLines({history: moveHistory, rows: rows, cols: cols}, towin);
+        res.send(result);
     } catch(error){
         next(error);
     }

@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const DB_NAME = 'arcade_db'
 const DB_URL = process.env.DATABASE_URL || `postgres://localhost:5432/${ DB_NAME }`;
 const client = new Client(DB_URL);
-const {findAllLines, checkViolations } = require('./findLines');
+const {findAllLines, checkViolations, findWinningLines } = require('./findLines');
 
 const bcrypt = require('bcrypt'); // import bcrypt
 
@@ -224,21 +224,19 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
     try{
       let game = await getGame(id);
       let win = game.winner;
+      let violated = false;
       if(win) throw Error("Game Already over");
       const violations = checkViolations(moveHistory, game.rows, game.cols, {overline: game.overline, threeThree: game.threethree, fourFour: game.fourfour});
-      const result = findAllLines({history: moveHistory, rows: game.rows, cols: game.cols});
-      let winLines = result.lines.filter(line => line.length >= game.towin);
       if(violations.overline || violations.threeThree|| violations.fourFour)
       {
-        let color;
-        if(moveHistory.length % 2) color = "white";
-        else color = "black";
-        console.log("passed")
-        winLines = [];
         moveHistory[moveHistory.length - 1].illegal = true;
         updateWinner(id,"white");
-
-      } else if(!win && winLines.length > 0){ 
+        violated = true;
+      } 
+      const result = findWinningLines({history: moveHistory, rows: game.rows, cols: game.cols}, game.towin);
+      let winLines = result.winLines;
+      console.log("winLines", winLines)
+      if(!win && winLines.length > 0 && !violated){ 
         updateWinner(id, winLines[0].color);
         win = true;
       }
