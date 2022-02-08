@@ -20,45 +20,23 @@ const Three = 3;
 const Four = 4;
 const Other = 0;
 
+/**@type Restrictions */
 const noRestrictions = Object.freeze({
     overline: false,
     threeThree: false,
     fourFour: false
 });
+/**@type Restrictions */
 const allRestrictions = Object.freeze({
     overline: true,
     threeThree: true,
     fourFour: true
 });
 
-/* constructors for all of the types of objects we use in this file; I didn't
-** add these to the code much mostly because they would make it longer. Mostly
-** I just wanted these as some kind of documentation of what each type of
-** object contains. For any of these "classes" you should just be able to use
-** any objects that have properties with the correct names and types. Maybe in
-** the future I will replace contructors with factory functions. */
-/**
- * factory function for gamestate from a move history and board size alone.
- * This function automatically calls findAllLines and findAllOneAway on the new
- * gamestate.
- * @param {number} rows A positive integer representing the number of rows the
- * board has.
- * @param {number} cols A positive integer representing the number of columns
- * the board has.
- * @param {Node[]} history A list of all moves played in the game so far.
- * @returns {Gamestate}
- */
-function constructGamestate(rows, cols, history = [])
-{
-    let state = {rows, cols, history};
-    const result = findAllLines(state);
-    state.board = result.board;
-    state.lines = result.lines;
-    state.lines = findAllOneAway(state);
-    state.turn = history.length % 2 ? White : Black;
-    return state;
-}
-
+/* typedefs for all of the types of objects we use in this file. For any of
+** these types you should just be able to use any objects that have properties
+** with the correct names and types, with properties not used by any particular
+** function left undefined.*/
 
 /**A gamestate represents the abstract state that the actual board
  * is in - the history of moves, the current state of the board, the board
@@ -77,7 +55,7 @@ function constructGamestate(rows, cols, history = [])
 /**A "node" is a row and column coordinate pair for a board location.
  * @typedef Node
  * @property {number} row a non-negative integer
- * @property {number} column a non-negative integer
+ * @property {number} col a non-negative integer
  */
 
 /**A "line" is what is called a row in my (Ian's) translated ruleset: a set of
@@ -121,6 +99,42 @@ function constructGamestate(rows, cols, history = [])
  * @property {boolean} future
  */
 
+/**
+ * Create a board of the specified size with all empty locations
+ * @param {number} rows 
+ * @param {number} cols 
+ * @returns {BoardSpace[][]}
+ */
+
+
+/**
+ * factory function for gamestate from a move history and board size alone.
+ * This function automatically calls findAllLines and findAllOneAway on the new
+ * gamestate.
+ * @param {number} rows A positive integer representing the number of rows the
+ * board has.
+ * @param {number} cols A positive integer representing the number of columns
+ * the board has.
+ * @param {Node[]} history A list of all moves played in the game so far.
+ * @returns {Gamestate}
+ */
+ function constructGamestate(rows, cols, history = [])
+ {
+     let state = {rows, cols, history};
+     const result = findAllLines(state);
+     state.board = result.board;
+     state.lines = result.lines;
+     state.lines = findAllOneAway(state);
+     state.turn = history.length % 2 ? White : Black;
+     return state;
+}
+
+/**
+ * Creates a board of the specified size filled with blank BoardSpaces.
+ * @param {number} rows 
+ * @param {number} cols 
+ * @returns {BoardSpace}
+ */
 function createBlankArray(rows, cols)
 {
     let arr = [];
@@ -136,6 +150,14 @@ function createBlankArray(rows, cols)
     return arr;
 }
 
+/**
+ * Uses the history and board size of gamestate to create a board with all of
+ * the moves played on it. The BoardSpaces returned by this function do not yet
+ * have any properties except for occupied, color, and if occupied, moveNum and
+ * future.
+ * @param {Gamestate} gamestate only need history, rows, and cols.
+ * @returns {BoardSpace[][]} 
+ */
 function createFilledArray(gamestate)
 {
     const gs = gamestate;
@@ -144,31 +166,53 @@ function createFilledArray(gamestate)
         let turn;
         if(indx % 2 == 0) turn = Black;
         else turn = White;
-        arr1[move.row][move.col] = {occupied:true, color: turn, moveNum: indx + 1, future: move.future};
+        arr1[move.row][move.col] = {
+            occupied:true,
+            color: turn,
+            moveNum: indx + 1,
+            future: move.future
+        };
     });
     return arr1;
 }
 
+/**
+ * Return a new node one step away from node in the specified lineDirection,
+ * either forwards or backwards.
+ * Useful when following possible lines on a board.
+ * @param {String} lineDirection
+ * @param {Node} node
+ * @param {boolean} forward
+ * @returns
+ */
 function iterateLine(lineDirection, node, forward = true)
 {
-        if(lineDirection !== Vertical)
-        {
-            if(forward) node.col++;
-            else node.col--;
-        }
-        if(lineDirection == Vertical || lineDirection == Negative)
-        {
-            if(forward) node.row++;
-            else node.row--;
-        }
-        if(lineDirection == Positive)
-        {
-            if(forward) node.row--;
-            else node.row++;
-        }
-        return node;
+    let newNode = Object.assign({}, node);
+    if(lineDirection !== Vertical)
+    {
+        if(forward) newNode.col++;
+        else newNode.col--;
+    }
+    if(lineDirection === Vertical || lineDirection == Negative)
+    {
+        if(forward) newNode.row++;
+        else newNode.row--;
+    }
+    if(lineDirection === Positive)
+    {
+        if(forward) newNode.row--;
+        else newNode.row++;
+    }
+    return newNode;
 }
 
+/**
+ * Return a BoardSpace at the given location if it is in the board, or one which
+ * is {occupied:true, color:None} otherwise.
+ * @param {Node} node 
+ * @param {Gamestate} gamestate 
+ * @returns {BoardSpace}
+ */
 function getTableVar(node, gamestate)
 {
     const gs = gamestate;
@@ -179,29 +223,45 @@ function getTableVar(node, gamestate)
     return gs.board[node.row][node.col];
 }
 
+/**
+ * Figures out whether a set of coordinates would fall on or off of a board of
+ * the specified size.
+ * @param {number} row 
+ * @param {number} col 
+ * @param {number} rows 
+ * @param {number} cols 
+ * @returns 
+ */
 function isOnTable(row, col, rows, cols)
 {
-    if(row < 0 || col < 0 || row > rows -1 || col > cols -1) return false;
-    return true;
+    return !(row < 0 || col < 0 || row > rows -1 || col > cols -1);
 }
 
-
+/**
+ * Create the line based on the board in gamestate starting at node going in the
+ * direction lineDirection and label it with the id lineNum, then return it
+ * @param {Node} root 
+ * @param {Gamestate} gamestate 
+ * @param {number} lineNum 
+ * @param {String} lineDirection 
+ * @returns {Line}
+ */
 function findLine(root, gamestate, lineNum, lineDirection)
 {
     let gs = gamestate;
-    let currentNode = Object.assign({}, root);
+    let currentNode = root
     let length = 0;
     let color = getTableVar(root, gs).color;
     while(getTableVar(currentNode, gs).color === color) 
     {
         length++;
         gs.board[currentNode.row][currentNode.col][lineDirection] = lineNum;
-        currentNode = iterateLine(lineDirection, currentNode)
+        currentNode = iterateLine(lineDirection, currentNode, true);
     }
     const end = iterateLine(lineDirection, currentNode, false);
   
-    currentNode = iterateLine(lineDirection, Object.assign({}, root), false);
-    while(getTableVar(currentNode, gs).color === color ) 
+    currentNode = iterateLine(lineDirection, root, false);
+    while(getTableVar(currentNode, gs).color === color) 
     {
         length++;
         gs.board[currentNode.row][currentNode.col][lineDirection] = lineNum;
@@ -212,11 +272,17 @@ function findLine(root, gamestate, lineNum, lineDirection)
 }
 
 
-
+/**
+ * Find the lines for the given gamestate, without checking if they are threes
+ * or fours or checking what their lineBefore or lineAfter are.
+ * @param {Gamestate} gamestate 
+ * @returns 
+ */
 function findAllLines(gamestate)
 {
     const board = createFilledArray(gamestate);
-    const gs = Object.assign({board}, gamestate)
+    //copy of the gamestate with the new board to pass to things
+    const gs = Object.assign({board}, gamestate);
     let num = 1;
     let lines = [];
     gs.history.forEach((node) => {
@@ -237,24 +303,43 @@ function findAllLines(gamestate)
     return {lines, board};
 }
 
+/**
+ * Get the lines, if any, one away before and after the given line on the board
+ * in gamestate.
+ * @param {String} direction 
+ * @param {Line} line 
+ * @param {Gamestate} gamestate 
+ * @returns 
+ */
 function findOneAway(direction, line, gamestate)
 {
     const gs = gamestate;
-    const endCopy = Object.assign({}, line.end)
-    const startCopy = Object.assign({}, line.start)
-    const after = iterateLine(direction, iterateLine(direction, endCopy));
-    if(isOnTable(after.row, after.col, gs.rows, gs.cols) && gs.board[after.row][after.col].color == line.color)
+    const newLine = Object.assign({}, line);
+    const after = iterateLine(direction, iterateLine(direction, newLine.end));
+    if(isOnTable(after.row, after.col, gs.rows, gs.cols)
+        && gs.board[after.row][after.col].color == newLine.color)
     {
-        line.lineAfter = gs.board[after.row][after.col][direction];
+        newLine.lineAfter = gs.board[after.row][after.col][direction];
     }
-    const before = iterateLine(direction, iterateLine(direction, startCopy, false), false);
-    if(isOnTable(before.row, before.col, gs.rows, gs.cols) && gs.board[before.row][before.col].color == line.color)
+    const before = iterateLine(
+        direction,
+        iterateLine(direction, newLine.start, false),
+        false
+    );
+    if(isOnTable(before.row, before.col, gs.rows, gs.cols)
+        && gs.board[before.row][before.col].color == newLine.color)
     {
-        line.lineBefore = gs.board[before.row][before.col][direction];
+        newLine.lineBefore = gs.board[before.row][before.col][direction];
     }
-    return line;
+    return newLine;
 }
 
+/**
+ * non-destructively fill in the lineBefore and lineAfter of all the lines in
+ * gamestate and return a list of these new lines.
+ * @param {Gamestate} gamestate 
+ * @returns {Line[]}
+ */
 function findAllOneAway(gamestate)
 {
     const gs = gamestate;
@@ -287,19 +372,31 @@ const moveHistory = [
 {row: 10, col: 1}
 ];
 
-// returns a value saying which restrictions a move violated of the form
-// {overline, threeThree, fourFour}, all bools, true if violated.
+/** returns a value saying which restrictions a move violated by the most recent
+ *  move of the form
+ * {overline, threeThree, fourFour}, all bools, true if violated.
+ * @param {Gamestate} gamestate
+ * @returns {Restrictions}
+ */
 function violations(gamestate)
 {
     //check whether there is any overline, then three-three or four-four.
-    const overline = (gamestate.lines.filter(line => line.length > 5).length !== 0);
+    const overline = (gamestate.lines.filter(line =>
+        line.length > 5
+    ).length !== 0);
     const threeThree = checkThreeThree(gamestate);
     const fourFour = checkFourFour(gamestate);
     return {overline, threeThree, fourFour};
 }
 
-// pass in a value saying which restrictions you want created with the
-// Restrictions constructor.
+/**
+ * checks whether the move represented by node is allowed on gamestatebased on a
+ * value saying which restrictions you want checked
+ * @param {Node} node 
+ * @param {Gamestate} gamestate 
+ * @param {Restrictions} restrictions 
+ * @returns 
+ */
 function isAvailable(node, gamestate, restrictions = allRestrictions)
 {   
     const gs = gamestate;
@@ -318,6 +415,11 @@ function isAvailable(node, gamestate, restrictions = allRestrictions)
     return out;
 }
 
+/**
+ * check if the last move is a three-three
+ * @param {Gamestate} gamestate 
+ * @returns 
+ */
 function checkThreeThree(gamestate)
 {
     const lalb = linesAndLinesBefore(gamestate);
@@ -325,6 +427,11 @@ function checkThreeThree(gamestate)
     return fours.length >= 2;
 }
 
+/**
+ * check if the last move is a four-four
+ * @param {Gamestate} gamestate 
+ * @returns 
+ */
 function checkFourFour(gamestate)
 {
     const lalb = linesAndLinesBefore(gamestate);
@@ -364,8 +471,13 @@ function linesAndLinesBefore(gamestate)
     return [...lines, ...linesBefore];
 }
 
-/* given a gamestate, modify a copy of and return the lines in it so that
-** threes and fours are marked. */
+/**
+ * given a gamestate, modify a copy of and return the lines in it so that
+ * threes and fours are marked.
+ * @param {Gamestate} gamestate 
+ * @param {Restrictions} restrictions 
+ * @returns 
+ */
 function identifyAll(gamestate, restrictions = allRestrictions)
 {
     const gs = gamestate;
@@ -375,6 +487,12 @@ function identifyAll(gamestate, restrictions = allRestrictions)
     );
 }
 
+/**
+ * given a line and its gamestate, tell if it is a three or four or not
+ * @param {Gamestate} gamestate 
+ * @param {Restrictions} restrictions 
+ * @returns 
+ */
 function identify(line, gamestate, restrictions = allRestrictions)
 {
     const gs = gamestate;
@@ -431,7 +549,7 @@ function identify(line, gamestate, restrictions = allRestrictions)
         }
     } else if (isAvailable(left, gs, restrictions)){
         if (line.length === 3){
-            const newState = playmove(left, gs);
+            const newState = playMove(left, gs);
             const lefter = iterateLine(line.lineDirection, left, false);
             if (isAvailable(lefter, newState, restrictions)
                 && isAvailable(gap, newState, restrictions)){
@@ -444,16 +562,27 @@ function identify(line, gamestate, restrictions = allRestrictions)
     return Other; //it fits none of the patterns
 }
 
-//give me a new gamestate after playing the set move
+/**
+ * give me a new gamestate after playing the set move
+ * @param {Node} node 
+ * @param {Gamestate} gamestate 
+ * @returns 
+ */
 function playMove(node, gamestate)
 {//maybe we should make this more efficient.
     const gs = gamestate;
     return constructGamestate(gs.rows, gs.cols, [...gs.history, node]);
 }
 
-const testState = constructGamestate(15, 15, moveHistory);
-testState.lines = identifyAll(testState, allRestrictions);
-
+/**
+ * check the violations on the last move based on a move history rather than a
+ * gamestate
+ * @param {Node[]} history 
+ * @param {number} rows 
+ * @param {number} cols 
+ * @param {Restrictions} restrictions 
+ * @returns 
+ */
 function checkViolations(history, rows, cols, restrictions)
 {
     let state = constructGamestate(rows, cols, history);
@@ -503,6 +632,12 @@ const overlineHistory = [
     {row: 2, col: 2},
     {row: 6, col: 8}
 ]
+
+console.log(checkViolations(fourFourHistory, 15, 15, allRestrictions))
+let x = {row: 0, col: 0};
+let y = iterateLine(Horizontal, x)
+console.log(JSON.stringify(x));
+console.log(JSON.stringify(y));
 
 module.exports = {findAllLines, checkViolations};
 
