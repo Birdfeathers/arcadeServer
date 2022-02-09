@@ -226,8 +226,8 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       let win = game.winner;
       let violated = false;
       if(win) throw Error("Game Already over");
-      const violations = checkViolations(moveHistory, game.rows, game.cols, {overline: game.overline, threeThree: game.threethree, fourFour: game.fourfour});
-      if(violations.overline || violations.threeThree|| violations.fourFour)
+      const violations = checkViolations(moveHistory, game.rows, game.cols, {overline: game.nooverline, threeThree: game.nothreethree, fourFour: game.nofourfour});
+      if((violations.overline && game.nooverline)|| (violations.threeThree && game.nothreethree)|| (violations.fourFour && game.nofourfour))
       {
         moveHistory[moveHistory.length - 1].illegal = true;
         updateWinner(id,"white");
