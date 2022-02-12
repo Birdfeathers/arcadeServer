@@ -410,7 +410,8 @@ function isAvailable(node, gamestate, restrictions = allRestrictions)
     }
     // otherwise check that the violations are not true if they are restricted.
     const viols = violations(newState, restrictions);
-    const out = !(restrictions.overline && viols.overline)
+    const out
+        =  !(restrictions.overline && viols.overline)
         && !(restrictions.threeThree && viols.threeThree)
         && !(restrictions.fourFour && viols.fourFour);
     return out;
@@ -513,8 +514,8 @@ function identify(line, gamestate, restrictions = allRestrictions)
                         && isAvailable(right, newState, restrictions)){
                         return Three; //pattern AbabbA
                     }
-                } else if (rightLine.length == 3){
-                    return Four; //pattern babbb
+                } else if (rightLine.length >= 3){
+                    return Four; //patterns babbb and wawwww
                 }
             } else if (line.length === 2) {
                 if (rightLine.length === 1){
@@ -523,11 +524,14 @@ function identify(line, gamestate, restrictions = allRestrictions)
                         && isAvailable(right, newState, restrictions)){
                         return Three; //pattern AbbabA
                     }
-                } else if (rightLine.length == 2){
-                    return Four //pattern bbabb
+                } else if (rightLine.length >= 2){
+                    return Four //patterns bbabb, wwawww, and wwawwww
                 }
-            } else if (line.length == 3){
-                return Four //pattern bbbab
+            } else {
+                return Four 
+                /* patterns bbbab, abbbba, nbbbba, wwwaww, wwwawww, wwwawwww,
+                ** wwwwaw, wwwwaww, wwwwawww, and wwwwawwww
+                */
             }
         } else {
             const right = iterateLine(line.lineDirection, gap, true);
@@ -544,8 +548,6 @@ function identify(line, gamestate, restrictions = allRestrictions)
                         return Three; //pattern AabbbəN
                     }
                 }
-            } else if (line.length == 4) {
-                return Four; //patterns abbbba and nbbbba
             }
         }
     } else if (isAvailable(left, gs, restrictions)){
@@ -638,8 +640,7 @@ const overlineHistory = [
 console.log(checkViolations(fourFourHistory, 15, 15, allRestrictions))
 let x = {row: 0, col: 0};
 let y = iterateLine(Horizontal, x)
-console.log(JSON.stringify(x));
-console.log(JSON.stringify(y));
+
 
 module.exports = {findAllLines, checkViolations};
 
