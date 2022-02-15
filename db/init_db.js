@@ -46,7 +46,13 @@ async function buildTables() {
           "playerTwo" INTEGER REFERENCES users(id),
           "owner" INTEGER REFERENCES users(id),
           moveHistory VARCHAR,
-          winner VARCHAR
+          winner VARCHAR,
+          remaingTimeOne INTEGER,
+          remainingTimeTwo INTEGER,
+          totalTime INTEGER,
+          fisherInc INTEGER,
+          byoymi INTEGER,
+          byoymiPeriods INTEGER DEFAULT 0
         );
       `)
     } catch(error){
