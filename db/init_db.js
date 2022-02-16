@@ -52,7 +52,9 @@ async function buildTables() {
           totalTime INTEGER,
           fisherInc INTEGER,
           byoymi INTEGER,
-          byoymiPeriods INTEGER DEFAULT 0
+          TotalByoymiPeriods INTEGER DEFAULT 0,
+          byomiPeriodsOne INTEGER,
+          byomiPeriodsTwo INTEGER
         );
       `)
     } catch(error){
