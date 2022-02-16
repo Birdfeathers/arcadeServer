@@ -55,7 +55,7 @@ async function buildTables() {
           byoymi INTEGER,
           TotalByoymiPeriods INTEGER DEFAULT 0,
           byomiPeriodsOne INTEGER,
-          byomiPeriodsTwo INTEGER,
+          byomiPeriodsTwo INTEGER
         );
       `)
     } catch(error){
