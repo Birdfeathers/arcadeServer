@@ -49,12 +49,13 @@ async function buildTables() {
           winner VARCHAR,
           remaingTimeOne INTEGER,
           remainingTimeTwo INTEGER,
-          totalTime INTEGER,
+          startingTime INTEGER,
+          maxTime INTEGER,
           fisherInc INTEGER,
           byoymi INTEGER,
           TotalByoymiPeriods INTEGER DEFAULT 0,
           byomiPeriodsOne INTEGER,
-          byomiPeriodsTwo INTEGER
+          byomiPeriodsTwo INTEGER,
         );
       `)
     } catch(error){
