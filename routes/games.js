@@ -4,7 +4,10 @@ const {
     createGame,
     getGame,
     getGamesByUser,
-    updateMoveHistory}
+    updateMoveHistory,
+    updateStatus,
+    deleteGame
+}
 = require('../db/index');
 const {findAllLines, checkViolations, findWinningLines}  = require('../db/findLines');
 const {requireUser} = require('./utils');
@@ -79,6 +82,25 @@ gamesRouter.post('/violations', async (req, res, next) => {
 
     } catch(error){
         next(error);
+    }
+})
+
+gamesRouter.patch('/status/:gameId', requireUser, async (req, res, next) => {
+    try{
+        const {gameId} = req.params;
+        const {status} = req.body;
+        await updateStatus(gameId, status);
+    } catch(error){
+        next(error);
+    }
+})
+
+gamesRouter.delete('/:gameId', requireUser, async (req, res, next) => {
+    const {gameId} = req.params;
+    try {
+       await deleteGame(gameId);
+    } catch (error) {
+        next(error)
     }
 })
 

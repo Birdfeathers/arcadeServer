@@ -10,7 +10,9 @@ const {
   createGame,
   getGame,
   getGamesByUser,
-  updateMoveHistory
+  updateMoveHistory,
+  updateStatus,
+  deleteGame
 } = require('./index');
 
 async function buildTables() {
@@ -47,6 +49,7 @@ async function buildTables() {
           "owner" INTEGER REFERENCES users(id),
           moveHistory VARCHAR,
           winner VARCHAR,
+          status VARCHAR DEFAULT 'pending',
           remaingTimeOne INTEGER,
           remainingTimeTwo INTEGER,
           startingTime INTEGER,
@@ -151,11 +154,15 @@ async function createInitialGames()
 
     const gamesToCreate = [
       {rows: 3, cols: 3, toWin: 3, playerOne: 1, playerTwo: 1, moveHistory: JSON.stringify(game1Moves), owner: 3},
-      {rows: 3, cols: 3, toWin: 3, playerOne: 2, playerTwo: 3, moveHistory: JSON.stringify(game2Moves), owner: 2}
+      {rows: 3, cols: 3, toWin: 3, playerOne: 2, playerTwo: 3, moveHistory: JSON.stringify(game2Moves), owner: 2},
+      {rows: 3, cols: 3, toWin: 3, playerOne: 2, playerTwo: 3, moveHistory: "", owner: 2}
     ]
     let games = [];
     games[0] = await createGame(gamesToCreate[0]);
     games[1] = await createGame(gamesToCreate[1]);
+    await updateStatus(games[0].id, 'active');
+    await updateStatus(games[1].id, 'active');
+    games[2] = await createGame(gamesToCreate[2]);
     // const games = await Promise.all(gamesToCreate.map(createGame));
     console.log('Games created:');
     console.log(games);
@@ -216,9 +223,12 @@ async function testGameFunctions()
       console.log('Testing update move history with longer moves...');
       const moveHistory2 = await updateMoveHistory({id:1, moveHistory: longerMoves, game});
       console.log(moveHistory2);
-      // console.log('Testing update to tie ...')
-      // const moveHistory3 = await updateMoveHistory({id:2, moveHistory: moves2, game: game2});
-      // console.log(moveHistory3);
+      console.log('Testing update to tie ...')
+      const moveHistory3 = await updateMoveHistory({id:2, moveHistory: moves2, game: game2});
+      console.log(moveHistory3);
+      console.log('Testing deleting a game ...');
+      await deleteGame(2);
+      console.log(await getGamesByUser(userId))
       console.log('Finished testing game functions.')
   } catch(error){
       console.log('Error with game functions.')

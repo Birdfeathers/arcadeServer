@@ -2,17 +2,21 @@ require('dotenv').config();
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
+let num = 5;
 
 
 const port = process.env.PORT || 4001;
-// const port = "https://mysterious-mesa-87962.herokuapp.com/"
 const index = require("./routes/index");
+
 
 const app = express();
 app.use(index);
 
 
 const server = http.createServer(app);
+
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'build')));
 
 
 
@@ -27,6 +31,8 @@ const server = http.createServer(app);
 
 io.on("connection", (socket) => {
   socket.on('move', (move) => {
+    console.log(num);
+    num++;
     io.emit("game" + move.game, move);
   })
 })
@@ -45,3 +51,4 @@ server.listen(port, async () => {
   console.log(`Listening on port ${port}`);
 
 });
+

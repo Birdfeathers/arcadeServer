@@ -207,12 +207,28 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
   async function updateWinner(id, winner)
   {
     try{
+      await updateStatus(id, 'complete');
       const {rows: [game]} = await client.query(`
         UPDATE games
         SET winner = $1
         WHERE id = $2
         RETURNING *;
-      `, [winner, id])
+      `, [winner, id]);
+
+    } catch(error) {
+      throw error;
+    }
+  }
+
+  async function updateStatus(id, status)
+  {
+    try{
+      const {rows: [game]} = await client.query(`
+        UPDATE games
+        SET status = $1
+        WHERE id = $2
+        RETURNING *;
+      `, [status, id])
 
     } catch(error) {
       throw error;
@@ -225,7 +241,8 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       let game = await getGame(id);
       let win = game.winner;
       let violated = false;
-      if(win) throw Error("Game Already over");
+      if(game.status == "complete") throw Error("Game Already over");
+      if(game.status == "pending") throw Error("You can't play while the game is pending.")
       const violations = checkViolations(moveHistory, game.rows, game.cols, {overline: game.nooverline, threeThree: game.nothreethree, fourFour: game.nofourfour});
       if((violations.overline && game.nooverline)|| (violations.threeThree && game.nothreethree)|| (violations.fourFour && game.nofourfour))
       {
@@ -250,6 +267,19 @@ async function createGame({rows, cols, toWin, playerOne, playerTwo, moveHistory,
       
   }
 
+  async function deleteGame(id)
+  {
+    try{
+      await client.query(`
+      DELETE FROM games
+      WHERE id=$1;`,[id]);
+
+    } catch(error)
+    {
+      throw error;
+    }
+  }
+
 module.exports = {
     client, 
     createUser,
@@ -261,5 +291,7 @@ module.exports = {
     createGame,
     getGame,
     getGamesByUser,
-    updateMoveHistory
+    updateMoveHistory,
+    updateStatus,
+    deleteGame
 };
