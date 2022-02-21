@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
-let num = 5;
 
 
 const port = process.env.PORT || 4001;
@@ -26,15 +25,27 @@ app.use(express.static(path.join(__dirname, 'build')));
       methods: ["GET", "POST"]
     }
   });
+
  
 
 
 io.on("connection", (socket) => {
   socket.on('move', (move) => {
-    console.log(num);
-    num++;
     io.emit("game" + move.game, move);
   })
+
+  socket.on('delete', (id) => {
+    io.emit("delete" + id, id);
+  })
+
+  socket.on('activated', (id) => {
+    io.emit("activated", id);
+  })
+
+  socket.on('created', game => {
+    io.emit("created", game)
+  })
+
 })
 
 
@@ -51,4 +62,6 @@ server.listen(port, async () => {
   console.log(`Listening on port ${port}`);
 
 });
+
+
 
