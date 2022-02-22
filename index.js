@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'build')));
 
 io.on("connection", (socket) => {
   socket.on('move', (move) => {
-    io.emit("game" + move.game, move);
+    io.emit("game", move);
   })
 
   socket.on('delete', (id) => {
