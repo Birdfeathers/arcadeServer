@@ -14,10 +14,11 @@ const Vertical = "vertical";
 const Negative = "negative";
 const Positive = "positive";
 
-/* constants for representing whether a line is the beginning of a three or a
-** four or neither */
+/* constants for representing whether a line is the beginning of a three, or a
+** four, or both, or neither */
 const Three = 3;
 const Four = 4;
+const Both = 7;
 const Other = 0;
 
 /**@type Restrictions */
@@ -72,7 +73,7 @@ const allRestrictions = Object.freeze({
  * @property {Node} end
  * @property {number} lineAfter a lineNum.
  * @property {number} lineBefore a lineNum.
- * @property {number} lineType either Three, Four, or Other.
+ * @property {number} lineType either Three, Four, Both, or Other.
 */
 
 /**A simple object for keeping track of which restrictions you want to place
@@ -284,7 +285,7 @@ function findAllLines(gamestate)
     const board = createFilledArray(gamestate);
     //copy of the gamestate with the new board to pass to things
     const gs = Object.assign({board}, gamestate);
-    let num = 1;
+    let num = 1; //linenums are one indexed.
     let lines = [];
     gs.history.forEach((node) => {
         const tableNode = getTableVar(node, gs);
@@ -356,23 +357,6 @@ function findAllOneAway(gamestate)
     return newLines;
 }
 
-
-
-const moveHistory = [
-{row: 5, col: 4},
-{row: 1, col: 8},
-{row: 5, col: 5},
-{row: 2, col: 9},
-{row: 5, col: 6},
-{row: 4, col: 11},
-{row: 5, col: 8},
-{row: 5, col: 12},
-{row: 8, col: 11},
-{row: 8, col: 1},
-{row: 10, col: 9},
-{row: 10, col: 1}
-];
-
 /** returns a value saying which restrictions a move violated by the most recent
  *  move of the form
  * {overline, threeThree, fourFour}, all bools, true if violated.
@@ -391,8 +375,8 @@ function violations(gamestate)
 }
 
 /**
- * checks whether the move represented by node is allowed on gamestatebased on a
- * value saying which restrictions you want checked
+ * checks whether the move represented by node is allowed on gamestate based on
+ * a value saying which restrictions you want checked
  * @param {Node} node 
  * @param {Gamestate} gamestate 
  * @param {Restrictions} restrictions 
@@ -409,7 +393,7 @@ function isAvailable(node, gamestate, restrictions = allRestrictions)
         return true;
     }
     // otherwise check that the violations are not true if they are restricted.
-    const viols = violations(newState, restrictions);
+    const viols = violations(newState);
     const out
         =  !(restrictions.overline && viols.overline)
         && !(restrictions.threeThree && viols.threeThree)
@@ -425,8 +409,10 @@ function isAvailable(node, gamestate, restrictions = allRestrictions)
 function checkThreeThree(gamestate)
 {
     const lalb = linesAndLinesBefore(gamestate);
-    const fours = lalb.filter(line => line.lineType == Three);
-    return fours.length >= 2;
+    const threes = lalb.filter(line =>
+        line.lineType == Three || line.lineType == Both
+    );
+    return threes.length >= 2;
 }
 
 /**
@@ -437,16 +423,18 @@ function checkThreeThree(gamestate)
 function checkFourFour(gamestate)
 {
     const lalb = linesAndLinesBefore(gamestate);
-    const fours = lalb.filter(line => line.lineType == Four);
+    const fours = lalb.filter(line =>
+        line.lineType == Four || line.lineType == Both
+    );
     return fours.length >= 2;
 }
 
 /**
  *
- * @param {Node} node 
  * @param {Gamestate} gamestate 
- * @return {Line[]} The lines in gamestate that contain node, as well as any
- * lines that precede them with a gap of 1, ignoring 4s that already existed.
+ * @return {Line[]} The lines in gamestate that contain the most recently played
+ * node, as well as any lines that precede them with a gap of 1, ignoring 4s
+ * that already existed.
  */
 function linesAndLinesBefore(gamestate)
 {
@@ -461,7 +449,6 @@ function linesAndLinesBefore(gamestate)
     );
     //check for lines that have preceding line, then get those lines, unless
     //they may be fours that already existed
-    //TODO fours here may not work with longer lines?
     let linesBefore = lines
         .filter(line => line.lineBefore)
         .map(lineCurrent =>
@@ -490,19 +477,21 @@ function identifyAll(gamestate, restrictions = allRestrictions)
 }
 
 /**
- * given a line and its gamestate, tell if it is a three or four or not
+ * given a line and its gamestate, tell if it is a three or four or both or
+ * neither.
+ * @param {Line} line
  * @param {Gamestate} gamestate 
  * @param {Restrictions} restrictions 
  * @returns 
  */
 function identify(line, gamestate, restrictions = allRestrictions)
-{
+{//todo rule aut already existing lines before somehow
     const gs = gamestate;
     const left = iterateLine(line.lineDirection, line.start, false);
     const gap = iterateLine(line.lineDirection, line.end, true);
     /* below is some ugly logic for detecting patterns for threes and fours;
-    ** I do not know how to make it prettier*/
-    //todo new four patterns if restrictions.overline is false
+    ** I do not know how to make it prettier.
+    */
     if (isAvailable(gap, gs, restrictions)) {
         if (line.lineAfter){
             const rightLine = gs.lines.find(l => l.lineNum === line.lineAfter);
@@ -513,29 +502,53 @@ function identify(line, gamestate, restrictions = allRestrictions)
                     if(isAvailable(left, newState, restrictions)
                         && isAvailable(right, newState, restrictions)){
                         return Three; //pattern AbabbA
+                    } else {
+                        return Other; //no pattern
                     }
                 } else if (rightLine.length >= 3){
                     return Four; //patterns babbb and wawwww
+                } else {
+                    return Other;
                 }
             } else if (line.length === 2) {
                 if (rightLine.length === 1){
                     const newState = playMove(gap, gs);
                     if(isAvailable(left, newState, restrictions)
-                        && isAvailable(right, newState, restrictions)){
+                        && isAvailable(right, newState, restrictions)) {
                         return Three; //pattern AbbabA
+                    } else {
+                        return Other;
                     }
-                } else if (rightLine.length >= 2){
-                    return Four //patterns bbabb, wwawww, and wwawwww
+                } else { // i.e. if (rightLine.length >= 2)
+                    return Four; //patterns bbabb, wwawww, and wwawwww
                 }
-            } else {
-                return Four 
-                /* patterns bbbab, abbbba, nbbbba, wwwaww, wwwawww, wwwawwww,
-                ** wwwwaw, wwwwaww, wwwwawww, and wwwwawwww
-                */
+            } else { //i.e. if (line.length >= 3)
+                if (line.length === 3 && isAvailable(left, gs, restrictions)) {
+                    const newState = playMove(left, gs);
+                    const lefter = iterateLine(line.lineDirection, left, false);
+                    if (isAvailable(lefter, newState, restrictions)
+                        && isAvailable(gap, newState, restrictions)) {
+                        return Both; 
+                        /* patterns Aawwwəw, Aawwwəww, Aawwwəwww, Aawwwəwwww,
+                        ** and Aawwwawwww
+                        */
+                    } else {
+                        return Four;
+                        /* patterns Nabbbab, AabbbEb, Nawwwawww, AawwwEwww,
+                        ** Nawwwaww, AawwwEww, Nawwwawwww, and AawwwEwwww
+                        */
+                    }
+                } else {
+                    return Four;
+                    /* patterns nbbbab, nwwwaww, nwwwawww, nwwwawwww, wwwwaw,
+                    ** wwwwaww, wwwwawww, and wwwwawwww.
+                    ** also part of abbbba and nbbbba.
+                    */
+                }
             }
         } else {
             const right = iterateLine(line.lineDirection, gap, true);
-            if (line.length == 3) {
+            if (line.length === 3) {
                 let newState = playMove(gap, gs);
                 if(isAvailable(left, newState, restrictions)
                     && isAvailable(right, newState, restrictions)){
@@ -546,23 +559,32 @@ function identify(line, gamestate, restrictions = allRestrictions)
                     if (isAvailable(lefter, newState, restrictions)
                         && isAvailable(gap, newState, restrictions)){
                         return Three; //pattern AabbbəN
+                    } else {
+                        return Other;
                     }
                 }
+            } else if (line.length === 4) {
+                return Four; //potterns the rest of abbbba and nbbbba.
+            } else {
+                return Other;
             }
         }
-    } else if (isAvailable(left, gs, restrictions)){
-        if (line.length === 3){
+    } else if (!line.lineBefore && isAvailable(left, gs, restrictions)) {
+        if (line.length === 3) {
             const newState = playMove(left, gs);
             const lefter = iterateLine(line.lineDirection, left, false);
             if (isAvailable(lefter, newState, restrictions)
-                && isAvailable(gap, newState, restrictions)){
+                && isAvailable(gap, newState, restrictions)) {
                 return Three; //pattern Aabbbæ
+            } else {
+                return Other;
             }
         } else if (line.length === 4) {
             return Four; //pattern abbbbn
         }
+    } else {
+        return Other;
     }
-    return Other; //it fits none of the patterns
 }
 
 /**
@@ -649,11 +671,6 @@ const overlineHistory = [
     {row: 2, col: 2},
     {row: 6, col: 8}
 ]
-
-console.log(checkViolations(fourFourHistory, 15, 15, allRestrictions))
-let x = {row: 0, col: 0};
-let y = iterateLine(Horizontal, x)
-
 
 module.exports = {findAllLines, findWinningLines, checkViolations};
 
